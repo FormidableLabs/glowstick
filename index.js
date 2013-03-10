@@ -20,8 +20,8 @@ function initBoard(board) {
     request.body.commands.forEach(function(command) {
       board.writePixel(command.index, [command.r, command.g, command.b]);
     });
+    response.send();
   });
-
 
   var color = 254;
   var frame = _.range(0, 64).map(function(i) {
@@ -36,7 +36,9 @@ function initBoard(board) {
     }
   });
   board.writeFrame(frame, function(){
-    board.clear();
+    board.clear(function() {
+      board.fadePixel(0, [0, 0, 0], [254, 254, 254], 2000);
+    });
   });
 }
 

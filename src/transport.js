@@ -17,6 +17,10 @@ var translationMatrix = [
 ];
 
 function BoardTransport(fd, callback) {
+  this.pixels = _.range(0, 64).map(function(pixel) {
+    return [0, 0, 0];
+  });
+  this.pixelsIntervals = {};
   this.port = new SerialPort.SerialPort(fd, {
     baudrate: 115200
   });
@@ -34,8 +38,12 @@ BoardTransport.prototype.writeFrame = function(pixels, complete) {
   var port = this.port;
   var translatedPixels = [];
   pixels.forEach(function(pixel, i) {
+    if (this.pixelsIntervals[i]) {
+      clearInterval(this.pixelsIntervals[i]);
+      this.pixels[i] = pixel;
+    }
     translatedPixels[translationMatrix[i]] = pixel;
-  });
+  }, this);
   async.series([
     function(next) {
       var commandFrame = [255, 1, 0, 0];
@@ -68,7 +76,40 @@ BoardTransport.prototype.writeFrame = function(pixels, complete) {
   ], wrapCallback(complete));
 };
 
+BoardTransport.prototype.fadePixel = function(index, from, to, duration, complete) {
+  if (this.pixelsIntervals[index]) {
+    clearInterval(this.pixelsIntervals[index])
+  }
+  var intervalLength = 33,
+      steps = duration / intervalLength,
+      stepU = 1.0 / steps,
+      u = 0.0;
+  this.pixelsIntervals[index] = setInterval(_.bind(function() {
+    if (u >= 1.0) {
+      clearInterval(this.pixelsIntervals[index]);
+    }
+    var color = [
+      parseInt(lerp(from[0], to[0], u)),
+      parseInt(lerp(from[1], to[1], u)),
+      parseInt(lerp(from[2], to[2], u))
+    ];
+    this.pixels[index] = color;
+    this.port.write([255, 2, 0, translationMatrix[index]].concat(color), complete);
+    u += stepU;
+  }, this), intervalLength);
+};
+
+// linear interpolation between two values a and b
+// u controls amount of a/b and is in range [0.0,1.0]
+function lerp(a, b, u) {
+  return (1 - u) * a + u * b;
+};
+
 BoardTransport.prototype.writePixel = function(index, color, complete) {
+  if (this.pixelsIntervals[index]) {
+    clearInterval(this.pixelsIntervals[index])
+  }
+  this.pixels[index] = color;
   this.port.write([255, 2, 0, translationMatrix[index]].concat(color), complete);
 };
 
