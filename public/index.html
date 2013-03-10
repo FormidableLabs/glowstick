@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/thorax/2.0.0rc3/thorax.js"></script>
+    <script src="index.js"></script>
+    <script>
+      var output = '<table border="1">';
+      _.each(_.range(0, 64), function(i) {
+        if (i % 8 === 0) {
+          output += '<tr>';
+        }
+        output += '<td style="width: 50px; height: 50px;">' + i + '</td>';
+        if (i % 8 === 7) {
+          output += '</tr>';
+        }
+      });
+      output += '</table>';
+      $(function() {
+        $('body').append(output);
+      });
+
+      function componentToHex(c) {
+        var hex = c.toString(16);
+        return hex.length == 1 ? "0" + hex : hex;
+      }
+
+      function rgbToHex(r, g, b) {
+        return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+      }
+
+      var $set = Pixel.prototype.set;
+      Pixel.prototype.set = function() {
+        $set.apply(this, arguments);
+        $('td').eq(this.index).css({
+          backgroundColor: rgbToHex(this.color[0], this.color[1], this.color[2])
+        });
+      }
+    </script>
+  </head>
+  <body>
+
+  </body>
+</html>
