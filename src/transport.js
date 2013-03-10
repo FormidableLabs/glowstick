@@ -23,6 +23,13 @@ function BoardTransport(fd, callback) {
   this.port.on('open', callback);
 }
 
+// add a delay of 33ms (1000ms / 33ms === 30fps)
+function wrapCallback(callback) {
+  return function() {
+    setTimeout(callback || function() {}, 33);
+  }
+}
+
 BoardTransport.prototype.writeFrame = function(pixels, complete) {
   var port = this.port;
   var translatedPixels = [];
@@ -58,19 +65,19 @@ BoardTransport.prototype.writeFrame = function(pixels, complete) {
       }
       port.write(commandFrame, next);
     }    
-  ], complete || function(){});
+  ], wrapCallback(complete));
 };
 
 BoardTransport.prototype.writePixel = function(index, color, complete) {
-  this.port.write([255, 2, 0, index].concat(color), complete);
+  this.port.write([255, 2, 0, translationMatrix[index]].concat(color), complete);
 };
 
 BoardTransport.prototype.clear = function(callback) {
-  this.port.write([255, 10], callback);
+  this.port.write([255, 10], wrapCallback(callback));
 };
 
 BoardTransport.prototype.test = function(callback) {
-  this.port.write([255, 20], callback);
+  this.port.write([255, 20], wrapCallback(callback));
 };
 
 BoardTransport.list = function() {

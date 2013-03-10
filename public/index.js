@@ -7,16 +7,13 @@ var MAX_SIZE = (config.size * config.size) - 1;
 
 var board = {
   _pixels: [],
-  /*
-  select: function(start, end) {
-    var arr = [];
-    _.each(this._pixels, function(pixel) {
-
-    });
-    return new Pixels(arr);
+  range: function() {
+    return new Pixels(_.range.apply(_, arguments).map(function(i) {
+      return _.find(this._pixels, function(pixel) {
+        return pixel.index === i;
+      });
+    }, this));
   },
-
-  */
   at: function(index) {
     if (arguments.length == 2) {
       var args = arguments;
@@ -79,11 +76,14 @@ Pixels.prototype.each = function(callback, context) {
 };
 
 Pixels.prototype.add = function() {
-  _.flatten(_.toArray(arguments)).each(function(pixel) {
-    if (!this.has(pixel)) {
-      addPixel.call(this, pixel);
-    }
+  _.flatten(_.toArray(arguments)).forEach(function(pixels) {
+    pixels._pixels.forEach(function(pixel) {
+      if (!this.has(pixel)) {
+        addPixel.call(this, pixel);
+      }
+    }, this);
   }, this);
+  return this;
 };
 
 Pixels.prototype.filter = function(callback, context) {
@@ -271,4 +271,3 @@ function empty() {
 _.each(_.range(0, 64), function(i) {
   board[i] = board._pixels[i] = new Pixel(i);
 });
-

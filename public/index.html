@@ -28,10 +28,30 @@
       }
 
       var $set = Pixel.prototype.set;
-      Pixel.prototype.set = function() {
+      Pixels.prototype.set = function() {
         $set.apply(this, arguments);
-        $('td').eq(this.index).css({
-          backgroundColor: rgbToHex(this.color[0], this.color[1], this.color[2])
+        var color;
+        if (_.isArray(arguments[0])) {
+          color = arguments[0];
+        } else {
+          color = _.toArray(arguments);
+        }
+        var commands = [];
+        _.each(this._pixels, function(pixel) {
+          commands.push({
+            index: pixel.index,
+            r: color[0],
+            g: color[1],
+            b: color[2]
+          });
+          $('td').eq(pixel.index).css({
+            backgroundColor: rgbToHex(color[0], color[1], color[2])
+          });
+        }, this);
+        $.ajax({
+          type: 'post',
+          url: '/update',
+          data: {commands: commands}
         });
       }
     </script>

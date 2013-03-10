@@ -1,9 +1,46 @@
 var express = require('express'),
     fs = require('fs'),
     _ = require('underscore'),
-    async = require('async'),
+    transport = require('./src/transport.js'),
     server = express();
 
+var boards = transport.list();
+if (!boards.length) {
+  throw new Error('No boards connected.');
+}
+
+boards.forEach(function(fd) {
+  var board = new transport(fd, function() {
+    initBoard(board);
+  });
+});
+
+function initBoard(board) {
+  server.post('/update', function(request, response) {
+    request.body.commands.forEach(function(command) {
+      board.writePixel(command.index, [command.r, command.g, command.b]);
+    });
+  });
+
+
+  var color = 254;
+  var frame = _.range(0, 64).map(function(i) {
+    if (i < 16) {
+      return [color, color, 0];
+    } else if (i < 32) {
+      return [color, 0, color];
+    } else if (i < 48) {
+      return [0, color, color];
+    } else {
+      return [color, color, color];
+    }
+  });
+  board.writeFrame(frame, function(){
+    board.clear();
+  });
+}
+
+server.use(express.bodyParser());
 server.use(express.static('public'));
 server.listen(8014);
 
