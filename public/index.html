@@ -1,6 +1,7 @@
 <html>
   <head>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/thorax/2.0.0rc3/thorax.js"></script>
+    <script src="jquery-color.js"></script>
     <script src="index.js"></script>
     <script>
       var output = '<table border="1">';
@@ -27,7 +28,7 @@
         return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
       }
 
-      var $set = Pixel.prototype.set;
+      var $set = Pixels.prototype.set;
       Pixels.prototype.set = function() {
         $set.apply(this, arguments);
         var color;
@@ -39,6 +40,7 @@
         var commands = [];
         _.each(this._pixels, function(pixel) {
           commands.push({
+            command: 'set',
             index: pixel.index,
             r: color[0],
             g: color[1],
@@ -53,7 +55,40 @@
           url: '/update',
           data: {commands: commands}
         });
-      }
+      };
+
+      var $fade = Pixels.prototype.fade;
+      Pixels.prototype.fade = function(from, to, duration, callback) {
+        $fade.apply(this, arguments);
+        var commands = [];
+        _.each(this._pixels, function(pixel) {
+          //$('td').eq(pixel.index).css({
+          //  backgroundColor: rgbToHex(from[0], from[1], from[2])
+          //}).animate({
+          //  backgroundColor: rgbToHex(to[0], to[1], to[2])
+          //}, duration);
+          commands.push({
+            command: 'fade',
+            index: pixel.index,
+            from: {
+              r: from[0],
+              g: from[1],
+              b: from[2]
+            },
+            to: {
+              r: to[0],
+              g: to[1],
+              b: to[2]
+            },
+            duration: duration
+          });
+        }, this);
+        $.ajax({
+          type: 'post',
+          url: '/update',
+          data: {commands: commands}
+        });
+      };
     </script>
   </head>
   <body>

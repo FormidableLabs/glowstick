@@ -243,7 +243,11 @@ Pixels.prototype.set = function(color) {
   return this;
 };
 
-Pixels.prototype.fade = function() {
+Pixels.prototype.fade = function(from, to, duration, complete) {
+  var args = arguments;
+  _.each(this._pixels, function(pixel) {
+    pixel.fade.apply(pixel, args);
+  });
   return this;
 };
 
@@ -261,6 +265,10 @@ Pixel.prototype.set = function(color) {
     color = color || [0, 0, 0];
   }
   this.color = color;
+};
+
+Pixel.prototype.fade = function() {
+  //...
 };
 
 function empty() {

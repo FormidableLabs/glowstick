@@ -15,10 +15,23 @@ boards.forEach(function(fd) {
   });
 });
 
+function cleanInputColor(color) {
+  return Math.max(0, Math.min(254, parseInt(color, 10)));
+}
+
 function initBoard(board) {
   server.post('/update', function(request, response) {
     request.body.commands.forEach(function(command) {
-      board.writePixel(command.index, [command.r, command.g, command.b]);
+      if (command.command === 'set') {
+        board.writePixel(command.index, [cleanInputColor(command.r), cleanInputColor(command.g), cleanInputColor(command.b)]);
+      } else if (command.command === 'fade') {
+        board.fadePixel(
+          command.index,
+          [cleanInputColor(command.from.r), cleanInputColor(command.from.g), cleanInputColor(command.from.b)],
+          [cleanInputColor(command.to.r), cleanInputColor(command.to.g), cleanInputColor(command.to.b)],
+          command.duration
+        );
+      }
     });
     response.send();
   });
@@ -37,14 +50,16 @@ function initBoard(board) {
   });
   board.writeFrame(frame, function(){
     board.clear(function() {
-      board.fadePixel(0, [0, 0, 0], [254, 254, 254], 2000);
+      //setInterval(function() {
+      //  board.fadePixel(Math.floor(Math.random() * 64), [0, 0, 0], [254, 254, 254], 2000);
+      //}, 33);
     });
   });
 }
 
 server.use(express.bodyParser());
 server.use(express.static('public'));
-server.listen(8014);
+server.listen(8015);
 
 
 /*

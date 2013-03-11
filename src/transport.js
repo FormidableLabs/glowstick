@@ -85,15 +85,18 @@ BoardTransport.prototype.fadePixel = function(index, from, to, duration, complet
       stepU = 1.0 / steps,
       u = 0.0;
   this.pixelsIntervals[index] = setInterval(_.bind(function() {
-    if (u >= 1.0) {
+    if (u > 1.0) {
       clearInterval(this.pixelsIntervals[index]);
+      this.pixels[index] = to;
+      this.port.write([255, 2, 0, translationMatrix[index]].concat(to), complete);
     }
     var color = [
-      parseInt(lerp(from[0], to[0], u)),
-      parseInt(lerp(from[1], to[1], u)),
-      parseInt(lerp(from[2], to[2], u))
+      Math.max(0, Math.min(254, parseInt(lerp(from[0], to[0], u)))),
+      Math.max(0, Math.min(254, parseInt(lerp(from[1], to[1], u)))),
+      Math.max(0, Math.min(254, parseInt(lerp(from[2], to[2], u))))
     ];
     this.pixels[index] = color;
+    console.log(color);
     this.port.write([255, 2, 0, translationMatrix[index]].concat(color), complete);
     u += stepU;
   }, this), intervalLength);
