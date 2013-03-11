@@ -235,14 +235,31 @@ Pixels.prototype.right = function(options) {
   }
 };
 
-function convertColor(color) {
-
+function convertColor() {
+  var color;
+  if (arguments.length === 1 && typeof arguments[0] === 'string') {
+    var hex = arguments[0];
+    if (!hex.match(/^#/)) {
+      hex = hexFromColorName(hex);
+    }
+    hex = hex.replace(/^#/, '');
+    color = [
+      parseInt(hex.substr(0, 2), 16),
+      parseInt(hex.substr(2, 2), 16),
+      parseInt(hex.substr(4, 2), 16)
+    ];
+  } else if (arguments.length === 3) {
+    color = _.toArray(arguments);
+  } else {
+    color = color || [0, 0, 0];
+  }
+  return color;
 }
 
 Pixels.prototype.set = function(color) {
-  var args = arguments;
+  color = convertColor.apply(this, arguments);
   _.each(this._pixels, function(pixel) {
-    pixel.set.apply(pixel, args);
+    pixel.set(color);
   });
   return this;
 };
@@ -280,12 +297,7 @@ function Pixel(index, color) {
 }
 
 Pixel.prototype.set = function(color) {
-  if (arguments.length === 3) {
-    color = _.toArray(arguments);
-  } else {
-    color = color || [0, 0, 0];
-  }
-  this.color = convertColor(color);
+  this.color = convertColor.apply(this, arguments);
 };
 
 Pixel.prototype.fade = function() {
