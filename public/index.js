@@ -235,6 +235,10 @@ Pixels.prototype.right = function(options) {
   }
 };
 
+function convertColor(color) {
+
+}
+
 Pixels.prototype.set = function(color) {
   var args = arguments;
   _.each(this._pixels, function(pixel) {
@@ -254,6 +258,20 @@ Pixels.prototype.fade = function(from, to, duration, complete) {
   return this;
 };
 
+Pixels.prototype.inspect = function() {
+  var output = 'Pixels (' + this.length + ')';
+  if (this.length) {
+    output += '{' + this._pixels.map(function(pixel) {
+      return pixel.index + ': ' + (JSON.stringify({
+        x: pixel.x,
+        y: pixel.y,
+        color: pixel.color
+      }));
+    }).join(' ,') + '}';
+  }
+  return output;
+};
+
 function Pixel(index, color) {
   this.index = index;
   this.x = index % config.size;
@@ -267,7 +285,7 @@ Pixel.prototype.set = function(color) {
   } else {
     color = color || [0, 0, 0];
   }
-  this.color = color;
+  this.color = convertColor(color);
 };
 
 Pixel.prototype.fade = function() {

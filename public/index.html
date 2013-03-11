@@ -16,7 +16,7 @@
       });
       output += '</table>';
       $(function() {
-        $('body').append(output);
+        $('#board').append(output);
       });
 
       function componentToHex(c) {
@@ -98,9 +98,71 @@
           data: {commands: commands}
         });
       };
+
+      $(function() {
+        var input = $('#repl-input'),
+            consoleEl = $('#console'),
+            button = $('input[type=button]');
+
+        button.click(executeCode);
+
+        function executeCode() {
+          var value = input.val();
+          try {
+            var response = eval(value);
+            if (response instanceof Pixels) {
+              highlightPixels(response);
+            }
+            consoleEl.append(response.inspect() + '<br>');
+          } catch (e) {
+            consoleEl.append(e.message + '<br>');
+          }
+          input.val('');
+        }
+
+        function highlightPixels(pixels) {
+          $('#board td').css({backgroundColor: 'transparent'});
+          if (pixels) {
+            pixels.each(function(pixel) {
+              $('#board td').eq(pixel.index).css({
+                backgroundColor: '#900'
+              });
+            });
+          }
+        }
+      });
+
     </script>
+    <style>
+      .right {
+        width: 300px;
+      }
+
+      #repl-input {
+        width: 500px;
+        font-size:18px;
+        margin: 10px;
+        font-family: Monaco, courier;
+      }
+
+      input[type=button] {
+        font-size:24px;
+      }
+    </style>
   </head>
   <body>
-
+    <table>
+      <tr>
+        <td class="left">
+          <div id="repl">
+            <textarea id="repl-input" rows="5"></textarea>
+            <input type="button" value="Run">
+            <div id="console"></div>
+          </div>
+          <div id="board"></div>
+        </td>
+        <td class="right">API</td>
+      </tr>
+    </table>
   </body>
 </html>
