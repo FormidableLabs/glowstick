@@ -1,4 +1,10 @@
 {
   "name": "led-server",
-  "version": "0.0.1"
+  "version": "0.0.1",
+  "dependencies": {
+    "async": "*",
+    "express": "*",
+    "underscore": "*",
+    "serialport": "*"
+  }
 }
