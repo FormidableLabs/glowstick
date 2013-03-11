@@ -20,6 +20,11 @@ function cleanInputColor(color) {
 }
 
 function initBoard(board) {
+  server.post('/clear', function(request, response) {
+    board.clear();
+    response.send();
+  });
+
   server.post('/update', function(request, response) {
     request.body.commands.forEach(function(command) {
       if (command.command === 'set') {

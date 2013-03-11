@@ -248,6 +248,9 @@ Pixels.prototype.fade = function(from, to, duration, complete) {
   _.each(this._pixels, function(pixel) {
     pixel.fade.apply(pixel, args);
   });
+  if (complete) {
+    setTimeout(complete, duration);
+  }
   return this;
 };
 

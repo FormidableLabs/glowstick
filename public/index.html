@@ -57,6 +57,15 @@
         });
       };
 
+      var $clear = board.clear;
+      board.clear = function() {
+        $clear.apply(this, arguments);
+        $.ajax({
+          type: 'post',
+          url: '/clear'
+        });
+      };
+
       var $fade = Pixels.prototype.fade;
       Pixels.prototype.fade = function(from, to, duration, callback) {
         $fade.apply(this, arguments);
