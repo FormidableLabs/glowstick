@@ -125,3 +125,89 @@ An individual pixel can be accessed via the array index either through the `boar
 
     var pixel = board[0];
     var pixels = board.select(0)
+
+
+
+## Examples
+
+### Walk
+
+    function walk(pixel) {
+      if (pixel.length) {
+        pixel.fade('white', 'teal', 250, function() {
+          pixel.fade('teal','black', 250);
+          walk(pixel.next());
+        });
+      }
+    }
+    var p = board.at(0, 0);
+    walk(p);
+
+### Blink
+
+    function blink(pixel) {
+      pixel.fade([255, 255, 255], [255, 0, 0], 250, function() {
+        pixel.fade([255, 0, 0], [0, 0, 0], 250, function() {
+      
+        });
+      });
+    }
+    
+    setInterval(function() {
+      blink(board.random());
+    }, 25);
+
+### Star
+
+    function streak(pixel) {
+      function fade(pixel, callback) {
+        pixel.fade([128, 128, 128], 'black', 250);
+        setTimeout(callback, 50);
+      }
+    
+      pixel.fade('white', 'black', 1000);
+    
+      ['below','above','left','right'].forEach(function(direction) {
+        function walk(pixel) {
+          var next = pixel[direction]({wrap: false});
+          if (next.length) {
+            fade(next, function() {
+              walk(next);
+            })
+          }
+        }
+        walk(pixel);
+      });
+    }
+    
+    setInterval(function() {
+      streak(board.random());
+    }, 250);
+
+
+### Gradient Fade
+
+    function rainbowWalk(pixel) {
+      pixel.fade('blue', 'red', 2000);
+      setTimeout(function() {
+        var p = pixel.next();
+        if (p.length) {
+          rainbowWalk(p);
+        }
+      }, 2000 / 64);
+    }
+    rainbowWalk(board.at(0));
+
+
+### Rainbow
+
+    function rainbowWalk(pixel) {
+      pixel.rainbow(10000);
+      setTimeout(function() {
+        var p = pixel.next();
+        if (p.length) {
+          rainbowWalk(p);
+        }
+      }, 10000 / 64);
+    }
+    rainbowWalk(board.at(0));
