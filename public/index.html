@@ -43,9 +43,6 @@
             g: color[1],
             b: color[2]
           });
-          $('td').eq(pixel.index).css({
-            backgroundColor: rgbToHex(color[0], color[1], color[2])
-          });
         }, this);
         $.ajax({
           type: 'post',
@@ -63,6 +60,25 @@
         });
       };
 
+      var $rainbow = Pixels.prototype.rainbow;
+      Pixels.prototype.rainbow = function(duration, callback) {
+        $fade.apply(this, arguments);
+        var commands = [];
+        _.each(this._pixels, function(pixel) {
+          commands.push({
+            command: 'rainbow',
+            index: pixel.index,
+            duration: duration
+          });
+        });
+        console.log(commands);
+        $.ajax({
+          type: 'post',
+          url: '/update',
+          data: {commands: commands}
+        });
+      };
+
       var $fade = Pixels.prototype.fade;
       Pixels.prototype.fade = function(from, to, duration, callback) {
         $fade.apply(this, arguments);
@@ -70,11 +86,6 @@
         var from = convertColor(from);
         var commands = [];
         _.each(this._pixels, function(pixel) {
-          //$('td').eq(pixel.index).css({
-          //  backgroundColor: rgbToHex(from[0], from[1], from[2])
-          //}).animate({
-          //  backgroundColor: rgbToHex(to[0], to[1], to[2])
-          //}, duration);
           commands.push({
             command: 'fade',
             index: pixel.index,

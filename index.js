@@ -29,6 +29,11 @@ function initBoard(board) {
     request.body.commands.forEach(function(command) {
       if (command.command === 'set') {
         board.writePixel(command.index, [cleanInputColor(command.r), cleanInputColor(command.g), cleanInputColor(command.b)]);
+      } else if (command.command === 'rainbow') {
+        board.rainbowPixel(
+          command.index,
+          command.duration
+        );
       } else if (command.command === 'fade') {
         board.fadePixel(
           command.index,

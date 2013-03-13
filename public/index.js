@@ -278,8 +278,10 @@ Pixels.prototype.fade = function(from, to, duration, complete) {
   return this;
 };
 
-Pixels.prototype.rainbow = function(duration, callback) {
-  rainbow(this, duration, callback);
+Pixels.prototype.rainbow = function(duration, complete) {
+  if (complete) {
+    setTimeout(complete, duration);
+  }
 };
 
 Pixels.prototype.inspect = function() {
@@ -319,36 +321,3 @@ function empty() {
 _.each(_.range(0, 64), function(i) {
   board[i] = board._pixels[i] = new Pixel(i);
 });
-
-
-// color shifting
-function rainbow(pixel, length, callback) {
-  function rgbFromHue(hue) {
-    var h = hue / 60;
-    var c = 255;
-    var x = (1 - Math.abs(h % 2 - 1)) * 255;
-    var color;
-    var i = Math.floor(h);
-    if (i == 0) color = [c, x, 0];
-    else if (i == 1) color = [x, c, 0];
-    else if (i == 2) color = [0, c, x];
-    else if (i == 3) color = [0, x, c];
-    else if (i == 4) color = [x, 0, c];
-    else color = [c, 0, x];
-    return color;
-  }
-  var stepSize = 3;
-  var timeoutLength = length / (360 / stepSize) 
-  var i = 0;
-  function step() {
-    i += stepSize;
-    pixel.set(rgbFromHue(i));
-    if (i <= 360) {
-      setTimeout(step, timeoutLength);
-    }
-  }
-  step();
-  if (callback) {
-    setTimeout(callback, length);
-  }
-}

@@ -76,9 +76,44 @@ BoardTransport.prototype.writeFrame = function(pixels, complete) {
   ], wrapCallback(complete));
 };
 
+BoardTransport.prototype.rainbowPixel = function(index, length, complete) {
+  if (this.pixelsIntervals[index]) {
+    clearInterval(this.pixelsIntervals[index]);
+    clearTimeout(this.pixelsIntervals[index]);
+  }
+  function rgbFromHue(hue) {
+    var h = hue / 60;
+    var c = 255;
+    var x = (1 - Math.abs(h % 2 - 1)) * 255;
+    var color;
+    var i = Math.floor(h);
+    if (i == 0) color = [c, x, 0];
+    else if (i == 1) color = [x, c, 0];
+    else if (i == 2) color = [0, c, x];
+    else if (i == 3) color = [0, x, c];
+    else if (i == 4) color = [x, 0, c];
+    else color = [c, 0, x];
+    return color;
+  }
+  var stepSize = 3;
+  var timeoutLength = length / (360 / stepSize) 
+  var i = 0;
+  var step = _.bind(function() {
+    i += stepSize;
+    var color = rgbFromHue(i);
+    this.pixels[i] = color;
+    this.port.write([255, 2, 0, translationMatrix[index]].concat(color), complete);
+    if (i <= 360) {
+      this.pixelsIntervals[i] = setTimeout(step, timeoutLength);
+    }
+  }, this);
+  step();
+};
+
 BoardTransport.prototype.fadePixel = function(index, from, to, duration, complete) {
   if (this.pixelsIntervals[index]) {
-    clearInterval(this.pixelsIntervals[index])
+    clearInterval(this.pixelsIntervals[index]);
+    clearTimeout(this.pixelsIntervals[index]);
   }
   var intervalLength = 33,
       steps = duration / intervalLength,
@@ -87,6 +122,7 @@ BoardTransport.prototype.fadePixel = function(index, from, to, duration, complet
   this.pixelsIntervals[index] = setInterval(_.bind(function() {
     if (u > 1.0) {
       clearInterval(this.pixelsIntervals[index]);
+      clearTimeout(this.pixelsIntervals[index]);
       this.pixels[index] = to;
       this.port.write([255, 2, 0, translationMatrix[index]].concat(to), complete);
     }
@@ -96,6 +132,7 @@ BoardTransport.prototype.fadePixel = function(index, from, to, duration, complet
       Math.max(0, Math.min(254, parseInt(lerp(from[2], to[2], u))))
     ];
     this.pixels[index] = color;
+
     console.log(color);
     this.port.write([255, 2, 0, translationMatrix[index]].concat(color), complete);
     u += stepU;
