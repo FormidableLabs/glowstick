@@ -45,37 +45,11 @@ function initBoard(board) {
     });
     response.send();
   });
-
-  startup(board);
 }
 
-function startup(board, next) {
-  var yellw = [241, 220, 63],
-    black = [50, 51, 48];
-
-  var jsLogo = [
-    yellw, yellw, yellw, yellw, yellw, yellw, yellw, yellw,
-    yellw, yellw, yellw, yellw, yellw, yellw, yellw, yellw,
-    yellw, yellw, yellw, yellw, yellw, yellw, yellw, yellw,
-    yellw, black, black, black, yellw, black, black, black,
-    yellw, yellw, black, yellw, yellw, black, yellw, yellw,
-    yellw, yellw, black, yellw, yellw, black, black, black,
-    yellw, yellw, black, yellw, yellw, yellw, yellw, black,
-    yellw, black, black, yellw, yellw, black, black, black
-  ];
-
-  board.writeFrame(jsLogo, function(){
-    setTimeout(function() {
-      board.clear();
-      if (next) {
-        next();
-      }
-    }, 7000);
-  });
-}
 
 server.use(express.bodyParser());
 server.use(express.static('public'));
-server.listen(8015);
+server.listen(80);
 
 

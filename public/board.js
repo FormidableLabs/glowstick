@@ -7,6 +7,22 @@ var MAX_SIZE = (config.size * config.size) - 1;
 
 var board = {
   _pixels: [],
+  _intervals: [],
+  _timeouts: [],
+  every: function(duration, callback) {
+    if (typeof duration === 'function') {
+      callback = arguments[0];
+      duration = arguments[1];
+    }
+    this._intervals.push(setInterval(callback, duration));
+  },
+  after: function(duration, callback) {
+    if (typeof duration === 'function') {
+      callback = arguments[0];
+      duration = arguments[1];
+    }
+    this._timeouts.push(setTimeout(callback, duration));
+  },
   range: function() {
     return new Pixels(_.range.apply(_, arguments).map(function(i) {
       return _.find(this._pixels, function(pixel) {
@@ -42,12 +58,47 @@ var board = {
     return new Pixels(this._pixels);
   },
   clear: function() {
+    this._intervals.forEach(function(interval) {
+      clearInterval(interval);
+    });
+    this._timeouts.forEach(function(timeout) {
+      clearTimeout(timeout);
+    });
     this.all().each(function(pixel) {
       pixel.set([0, 0, 0]);
     });
   },
   random: function() {
     return this.at(Math.floor(Math.random() * (config.size * config.size)));
+  },
+  js: function() {
+    var yellw = [241, 220, 63],
+        black = [50, 51, 48];
+    var jsLogo = [
+      yellw, yellw, yellw, yellw, yellw, yellw, yellw, yellw,
+      yellw, yellw, yellw, yellw, yellw, yellw, yellw, yellw,
+      yellw, yellw, yellw, yellw, yellw, yellw, yellw, yellw,
+      yellw, black, black, black, yellw, black, black, black,
+      yellw, yellw, black, yellw, yellw, black, yellw, yellw,
+      yellw, yellw, black, yellw, yellw, black, black, black,
+      yellw, yellw, black, yellw, yellw, yellw, yellw, black,
+      yellw, black, black, yellw, yellw, black, black, black
+    ];
+    var commands = [];
+    _.each(this._pixels, function(pixel) {
+        commands.push({
+          command: 'set',
+          index: pixel.index,
+          r: jsLogo[pixel.index][0],
+          g: jsLogo[pixel.index][1],
+          b: jsLogo[pixel.index][2]
+        });
+      }, this);
+    $.ajax({
+      type: 'post',
+      url: '/update',
+      data: {commands: commands}
+    });
   }
 };
 
@@ -90,7 +141,7 @@ Pixels.prototype.add = function() {
 };
 
 Pixels.prototype.filter = function(callback, context) {
-  return _.filter(this._pixels, callback, context);
+  return new Pixels(_.filter(this._pixels, callback, context));
 };
 
 Pixels.prototype.eq = function(index) {

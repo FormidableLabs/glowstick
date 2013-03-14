@@ -1,4 +1,6 @@
-TODO: adapt jQuery promises interface to this
+# Glowstick
+
+A jQuery like API for making LEDs blink in delightful patterns.
 
 ## Colors
 
@@ -6,163 +8,203 @@ All colors are specified in an RGB array in this format:
 
     [255, 255, 255]
 
-## Time
+    pixels.fade([0, 0, 0], [255, 255, 255], 2000);
 
+Alternatively [CSS color names](http://www.w3schools.com/tags/ref_colornames.asp) may be specified:
 
+    pixels.fade('blue', 'red', 2000);
 
 ## Board
 
-### at **board.at(index)**
+The `board` object allows you to run a few set commands (such as `clear`), and allows you to select pixels on the board. Most methods return a `Pixels` object which allows you to control the individual pixels.
 
-can be index or x y
+    board.all().set('blue');
 
-### row **board.row(index)**
-    
-    var pixels = board.row(0);
+### every **board.every(duration, callback)**
 
-### column **board.column(index)**
+Set an callback to be performed every `duration`. Use this instead of `setInterval` so that tasks can be cleared via `board.clear`
 
-    var pixels = board.column(0);
+    board.every(50, function() {
+      board.random().fade('white', 'black', 500);
+    });
 
-### all **board.all()**
-  
-    var pixels = board.all();
+### after **board.after(duration, callback**
+
+Set an callback to be performed after `duration`. Use this instead of `setTimeout` so that tasks can be cleared via `board.clear`
 
 ### clear **board.clear()**
 
-### on
+Set all the pixels to black.
 
-### off
+    board.clear();
 
-### trigger
+### all **board.all()**
+
+Select all of the pixels.
+
+    var pixels = board.all();
+
+### at **board.at(index)**
+
+Select a pixel at a given index:
+
+    board.at(0).set('green');
+
+Or select by x and y:
+
+    board.at(2, 2).set('blue');
+
+### row **board.row(index)**
+
+Select a row of pixels.
+
+    var pixels = board.row(0).fade('white', 'black', 1000);
+
+### column **board.column(index)**
+
+Select a column of pixels.
+
+    var pixels = board.row(0).fade('black', 'white', 1000);
+
+### js **board.js()**
+
+Displays a lovely JS logo.
 
 ## Pixels
 
-### each
+An array like object allowing you to operate on a set of pixels. Each command is generally run on the entire set of selected pixels.
+
+### set **pixels.set([r, g, b])**
+
+Set pixels to be a certain color.
+
+### fade **pixels.fade([from,] to, duration, callback)**
+
+Fade between two colors.
+
+    board.row(2).fade('black','white', 1000);
+    board.column(1).fade([255, 255, 255], [0, 0, 0], 1000);
 
 ### add
+
+Add pixels to the currently selected set.
 
     var pixels = board.select(0, 6);
     pixels.add(board.select(7, 9));
 
+    var pixels = board.row(0);
+    pixels.add(board.row(1));
+
 ### filter
-    
-    var pixels = board.select(0, 6);
-    pixels.filter(function(pixel, i) {
+
+Filter the selected pixels.
+
+    board.all().filter(function(pixel, i) {
       return i % 2 === 0;
-    });
-
-### eq
-
-### toArray
-
-### first
-
-first in set (not in board)
-
-### last
-
-last in set (not in board)
-
-### has
+    }).set('white');
 
 ### next **pixels.next({wrap: true})**
 
+Select the next pixel by index. Pass `wrap: false` to prevent the first pixel from being selected if you are on the last pixel.
+
 ### previous **pixels.previous({wrap: true})**
+
+Select the previous pixel by index. Pass `wrap: false` to prevent the last pixel from being selected if you are on the first pixel.
 
 ### above **pixels.above({wrap: true})*
 
+Select the pixels above the present pixels. Pass `wrap: false` to prevent it from wrapping around the board.
+
 ### below **pixels.below({wrap: true})*
+
+Select the pixels below the present pixels. Pass `wrap: false` to prevent it from wrapping around the board.
 
 ### left **pixels.left({wrap: true})*
 
+Select the pixels to the left of the present pixels. Pass `wrap: false` to prevent it from wrapping around the board.
+
 ### right **pixels.right({wrap: true})*
 
-### set **pixels.set([r, g, b])**
-
-### fade **pixels.fade([from,] to, duration, callback)**
-
-`from` is an optional 
-
-### after **pixels.after(timeout, callback)**
-
-Accepts arguments in any order.
-
-    var pixel = board.select(0);
-    function walk() {
-      pixel.on().after(100, function() {
-        pixel.off();
-        pixel = pixel.next();
-        walk();
-      });
-    }
-    walk();
-
-
-
-    board.all().on();
-
-    var pixel = board.select(0);
-    function walk() {
-      pixel.fade([255, 255, 255], [128, 128, 128], 0.5, )
-
-      pixel.on().after(100, function() {
-        pixel.off();
-        pixel = pixel.next({wrap: true});
-        walk();
-      });
-    }
-    walk();
-
-### on
-
-### off
-
+Select the pixels to the right of the present pixels. Pass `wrap: false` to prevent it from wrapping around the board.
 
 ### Pixel
 
 An individual pixel can be accessed via the array index either through the `board` object, or a `pixels object:
 
     var pixel = board[0];
-    var pixels = board.select(0)
+    var pixels = board.select(0);
 
+It contains the following properties:
 
+- index
+- x
+- y
+- color
+
+Individual pixels objects should only be used to check the status of a pixel, and not to manipulate / set the pixel.
 
 ## Examples
+
+### Random
+
+    board.every(50, function() {
+      board.random().fade('black', 'white', 500)
+    });
 
 ### Walk
 
     function walk(pixel) {
-      if (pixel.length) {
-        pixel.fade('white', 'teal', 250, function() {
-          pixel.fade('teal','black', 250);
-          walk(pixel.next());
-        });
-      }
+      pixel.fade('white', 'teal', 100, function() {
+        pixel.fade('teal','black', 100);
+        walk(pixel.next());
+      });
     }
-    var p = board.at(0, 0);
-    walk(p);
+    walk(board.at(0, 0));
 
-### Blink
+### Column Walk
+
+    function columnWalk(pixel) {
+      pixel.fade('white', 'black', 400);
+      board.after(100, function() {
+        columnWalk(pixel.right());
+      });
+    }
+    columnWalk(board.column(0));
+
+### Blink (Red / Black)
+
+    board.clear();
 
     function blink(pixel) {
-      pixel.fade([255, 255, 255], [255, 0, 0], 250, function() {
-        pixel.fade([255, 0, 0], [0, 0, 0], 250, function() {
-      
-        });
+      pixel.fade('white', 'red', 250, function() {
+        pixel.fade('red', 'black', 250);
+      });
+    }
+
+    board.every(25, function() {
+      blink(board.random());
+    });
+
+### Blink (Blue / Orange)
+  
+    board.all().set('orange');
+
+    function blink(pixel) {
+      pixel.fade('orange', 'teal', 250, function() {
+        pixel.fade('teal', 'orange', 250);
       });
     }
     
-    setInterval(function() {
+    board.every(25, function() {
       blink(board.random());
-    }, 25);
+    });
 
 ### Star
 
     function streak(pixel) {
       function fade(pixel, callback) {
         pixel.fade([128, 128, 128], 'black', 250);
-        setTimeout(callback, 50);
+        board.after(50, callback);
       }
     
       pixel.fade('white', 'black', 1000);
@@ -180,34 +222,16 @@ An individual pixel can be accessed via the array index either through the `boar
       });
     }
     
-    setInterval(function() {
+    board.every(500, function() {
       streak(board.random());
-    }, 250);
-
+    });
 
 ### Gradient Fade
 
-    function rainbowWalk(pixel) {
+    function fadingWalk(pixel) {
       pixel.fade('blue', 'red', 2000);
-      setTimeout(function() {
-        var p = pixel.next();
-        if (p.length) {
-          rainbowWalk(p);
-        }
-      }, 2000 / 64);
+      board.after(2000 / 64, function() {
+        fadingWalk(pixel.next());
+      });
     }
-    rainbowWalk(board.at(0));
-
-
-### Rainbow
-
-    function rainbowWalk(pixel) {
-      pixel.rainbow(10000);
-      setTimeout(function() {
-        var p = pixel.next();
-        if (p.length) {
-          rainbowWalk(p);
-        }
-      }, 10000 / 64);
-    }
-    rainbowWalk(board.at(0));
+    fadingWalk(board.at(0));
