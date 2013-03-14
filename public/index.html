@@ -1,178 +1,299 @@
 <html>
   <head>
+    <style>
+      body {
+        font-family: helvetica, arial;
+        font-size: 1.3em;
+      }
+
+      pre {
+        background-color: #f8f8f8;
+border: 1px solid #ccc;
+font-size: 13px;
+line-height: 19px;
+overflow: auto;
+padding: 6px 10px;
+border-radius: 3px;
+      }
+
+      pre code {
+margin: 0;
+padding: 0;
+background-color: transparent;
+border: none;      }
+    </style>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/thorax/2.0.0rc3/thorax.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/async/1.22/async.min.js"></script>
     <script src="jquery-color.js"></script>
     <script src="hex-from-color-name.js"></script>
     <script src="board.js"></script>
-    <script>
-      var output = '<table border="1">';
-      _.each(_.range(0, 64), function(i) {
-        if (i % 8 === 0) {
-          output += '<tr>';
-        }
-        output += '<td style="width: 50px; height: 50px;">' + i + '</td>';
-        if (i % 8 === 7) {
-          output += '</tr>';
-        }
-      });
-      output += '</table>';
-      $(function() {
-        $('#board').append(output);
-      });
-
-      function componentToHex(c) {
-        var hex = c.toString(16);
-        return hex.length == 1 ? "0" + hex : hex;
-      }
-
-      function rgbToHex(r, g, b) {
-        return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
-      }
-
-      var $set = Pixels.prototype.set;
-      Pixels.prototype.set = function() {
-        $set.apply(this, arguments);
-        var color = convertColor.apply(this, arguments);
-        var commands = [];
-        _.each(this._pixels, function(pixel) {
-          commands.push({
-            command: 'set',
-            index: pixel.index,
-            r: color[0],
-            g: color[1],
-            b: color[2]
-          });
-        }, this);
-        $.ajax({
-          type: 'post',
-          url: '/update',
-          data: {commands: commands}
-        });
-      };
-
-      var $clear = board.clear;
-      board.clear = function() {
-        $clear.apply(this, arguments);
-        $.ajax({
-          type: 'post',
-          url: '/clear'
-        });
-      };
-
-      var $rainbow = Pixels.prototype.rainbow;
-      Pixels.prototype.rainbow = function(duration, callback) {
-        $fade.apply(this, arguments);
-        var commands = [];
-        _.each(this._pixels, function(pixel) {
-          commands.push({
-            command: 'rainbow',
-            index: pixel.index,
-            duration: duration
-          });
-        });
-        console.log(commands);
-        $.ajax({
-          type: 'post',
-          url: '/update',
-          data: {commands: commands}
-        });
-      };
-
-      var $fade = Pixels.prototype.fade;
-      Pixels.prototype.fade = function(from, to, duration, callback) {
-        $fade.apply(this, arguments);
-        var to = convertColor(to);
-        var from = convertColor(from);
-        var commands = [];
-        _.each(this._pixels, function(pixel) {
-          commands.push({
-            command: 'fade',
-            index: pixel.index,
-            from: {
-              r: from[0],
-              g: from[1],
-              b: from[2]
-            },
-            to: {
-              r: to[0],
-              g: to[1],
-              b: to[2]
-            },
-            duration: duration
-          });
-        }, this);
-        $.ajax({
-          type: 'post',
-          url: '/update',
-          data: {commands: commands}
-        });
-      };
-
-      $(function() {
-        var input = $('#repl-input'),
-            consoleEl = $('#console'),
-            button = $('input[type=button]');
-
-        button.click(executeCode);
-
-        function executeCode() {
-          var value = input.val();
-          try {
-            var response = eval(value);
-            if (response instanceof Pixels) {
-              highlightPixels(response);
-            }
-            consoleEl.append(response.inspect() + '<br>');
-          } catch (e) {
-            consoleEl.append(e.message + '<br>');
-          }
-          input.val('');
-        }
-
-        function highlightPixels(pixels) {
-          $('#board td').css({backgroundColor: 'transparent'});
-          if (pixels) {
-            pixels.each(function(pixel) {
-              $('#board td').eq(pixel.index).css({
-                backgroundColor: '#900'
-              });
-            });
-          }
-        }
-      });
-
-    </script>
-    <style>
-      .right {
-        width: 300px;
-      }
-
-      #repl-input {
-        width: 500px;
-        font-size:18px;
-        margin: 10px;
-        font-family: Monaco, courier;
-      }
-
-      input[type=button] {
-        font-size:24px;
-      }
-    </style>
+    <script src="board-client.js"></script>
   </head>
   <body>
-    <table>
-      <tr>
-        <td class="left">
-          <div id="repl">
-            <textarea id="repl-input" rows="5"></textarea>
-            <input type="button" value="Run">
-            <div id="console"></div>
-          </div>
-          <div id="board"></div>
-        </td>
-        <td class="right">API</td>
-      </tr>
-    </table>
+    <h1>Glowstick</h1>
+    <p><b>The library described on this page is loaded in your browser. Right click "inspect element" then open up your JavaScript console.</b> Select "debug" on the bottom bar to show only the code and not the (many) ajax requests which will be sent.</p>
+
+    <pre><code>board.at(0).set('blue')</code></pre>
+
+    <hr>
+
+<p>A jQuery like API for making LEDs blink in delightful patterns.</p>
+
+<h2>Colors</h2>
+
+<p>All colors are specified in an RGB array in this format:</p>
+
+<pre><code>[255, 255, 255]
+
+pixels.fade([0, 0, 0], [255, 255, 255], 2000);
+</code></pre>
+
+<p>Alternatively <a href="http://www.w3schools.com/tags/ref_colornames.asp">CSS color names</a> may be specified:</p>
+
+<pre><code>pixels.fade('blue', 'red', 2000);
+</code></pre>
+
+<h2>Board</h2>
+
+<p>The <code>board</code> object allows you to run a few set commands (such as <code>clear</code>), and allows you to select pixels on the board. Most methods return a <code>Pixels</code> object which allows you to control the individual pixels.</p>
+
+<pre><code>board.all().set('blue');
+</code></pre>
+
+<h3>every <strong>board.every(duration, callback)</strong></h3>
+
+<p>Set an callback to be performed every <code>duration</code>. Use this instead of <code>setInterval</code> so that tasks can be cleared via <code>board.clear</code></p>
+
+<pre><code>board.every(50, function() {
+  board.random().fade('white', 'black', 500);
+});
+</code></pre>
+
+<h3>after <strong>board.after(duration, callback</strong></h3>
+
+<p>Set an callback to be performed after <code>duration</code>. Use this instead of <code>setTimeout</code> so that tasks can be cleared via <code>board.clear</code></p>
+
+<h3>clear <strong>board.clear()</strong></h3>
+
+<p>Set all the pixels to black.</p>
+
+<pre><code>board.clear();
+</code></pre>
+
+<h3>all <strong>board.all()</strong></h3>
+
+<p>Select all of the pixels.</p>
+
+<pre><code>var pixels = board.all();
+</code></pre>
+
+<h3>at <strong>board.at(index)</strong></h3>
+
+<p>Select a pixel at a given index:</p>
+
+<pre><code>board.at(0).set('green');
+</code></pre>
+
+<p>Or select by x and y:</p>
+
+<pre><code>board.at(2, 2).set('blue');
+</code></pre>
+
+<h3>row <strong>board.row(index)</strong></h3>
+
+<p>Select a row of pixels.</p>
+
+<pre><code>var pixels = board.row(0).fade('white', 'black', 1000);
+</code></pre>
+
+<h3>column <strong>board.column(index)</strong></h3>
+
+<p>Select a column of pixels.</p>
+
+<pre><code>var pixels = board.row(0).fade('black', 'white', 1000);
+</code></pre>
+
+<h3>js <strong>board.js()</strong></h3>
+
+<p>Displays a lovely JS logo.</p>
+
+<h2>Pixels</h2>
+
+<p>An array like object allowing you to operate on a set of pixels. Each command is generally run on the entire set of selected pixels.</p>
+
+<h3>set <strong>pixels.set([r, g, b])</strong></h3>
+
+<p>Set pixels to be a certain color.</p>
+
+<h3>fade <strong>pixels.fade([from,] to, duration, callback)</strong></h3>
+
+<p>Fade between two colors.</p>
+
+<pre><code>board.row(2).fade('black','white', 1000);
+board.column(1).fade([255, 255, 255], [0, 0, 0], 1000);
+</code></pre>
+
+<h3>add</h3>
+
+<p>Add pixels to the currently selected set.</p>
+
+<pre><code>var pixels = board.select(0, 6);
+pixels.add(board.select(7, 9));
+
+var pixels = board.row(0);
+pixels.add(board.row(1));
+</code></pre>
+
+<h3>filter</h3>
+
+<p>Filter the selected pixels.</p>
+
+<pre><code>board.all().filter(function(pixel, i) {
+  return i % 2 === 0;
+}).set('white');
+</code></pre>
+
+<h3>next <strong>pixels.next({wrap: true})</strong></h3>
+
+<p>Select the next pixel by index. Pass <code>wrap: false</code> to prevent the first pixel from being selected if you are on the last pixel.</p>
+
+<h3>previous <strong>pixels.previous({wrap: true})</strong></h3>
+
+<p>Select the previous pixel by index. Pass <code>wrap: false</code> to prevent the last pixel from being selected if you are on the first pixel.</p>
+
+<h3>above <em>*pixels.above({wrap: true})</em></h3>
+
+<p>Select the pixels above the present pixels. Pass <code>wrap: false</code> to prevent it from wrapping around the board.</p>
+
+<h3>below <em>*pixels.below({wrap: true})</em></h3>
+
+<p>Select the pixels below the present pixels. Pass <code>wrap: false</code> to prevent it from wrapping around the board.</p>
+
+<h3>left <em>*pixels.left({wrap: true})</em></h3>
+
+<p>Select the pixels to the left of the present pixels. Pass <code>wrap: false</code> to prevent it from wrapping around the board.</p>
+
+<h3>right <em>*pixels.right({wrap: true})</em></h3>
+
+<p>Select the pixels to the right of the present pixels. Pass <code>wrap: false</code> to prevent it from wrapping around the board.</p>
+
+<h3>Pixel</h3>
+
+<p>An individual pixel can be accessed via the array index either through the <code>board</code> object, or a `pixels object:</p>
+
+<pre><code>var pixel = board[0];
+var pixels = board.select(0);
+</code></pre>
+
+<p>It contains the following properties:</p>
+
+<ul>
+<li>index</li>
+<li>x</li>
+<li>y</li>
+<li>color</li>
+</ul>
+
+<p>Individual pixels objects should only be used to check the status of a pixel, and not to manipulate / set the pixel.</p>
+
+<h2>Examples</h2>
+
+<h3>Random</h3>
+
+<pre><code>board.every(50, function() {
+  board.random().fade('black', 'white', 500)
+});
+</code></pre>
+
+<h3>Walk</h3>
+
+<pre><code>function walk(pixel) {
+  pixel.fade('white', 'teal', 100, function() {
+    pixel.fade('teal','black', 100);
+    walk(pixel.next());
+  });
+}
+walk(board.at(0, 0));
+</code></pre>
+
+<h3>Column Walk</h3>
+
+<pre><code>function columnWalk(pixel) {
+  pixel.fade('white', 'black', 400);
+  board.after(100, function() {
+    columnWalk(pixel.right());
+  });
+}
+columnWalk(board.column(0));
+</code></pre>
+
+<h3>Blink (Red / Black)</h3>
+
+<pre><code>board.clear();
+
+function blink(pixel) {
+  pixel.fade('white', 'red', 250, function() {
+    pixel.fade('red', 'black', 250);
+  });
+}
+
+board.every(25, function() {
+  blink(board.random());
+});
+</code></pre>
+
+<h3>Blink (Blue / Orange)</h3>
+
+<pre><code>board.all().set('orange');
+
+function blink(pixel) {
+  pixel.fade('orange', 'teal', 250, function() {
+    pixel.fade('teal', 'orange', 250);
+  });
+}
+
+board.every(25, function() {
+  blink(board.random());
+});
+</code></pre>
+
+<h3>Star</h3>
+
+<pre><code>function streak(pixel) {
+  function fade(pixel, callback) {
+    pixel.fade([128, 128, 128], 'black', 250);
+    board.after(50, callback);
+  }
+
+  pixel.fade('white', 'black', 1000);
+
+  ['below','above','left','right'].forEach(function(direction) {
+    function walk(pixel) {
+      var next = pixel[direction]({wrap: false});
+      if (next.length) {
+        fade(next, function() {
+          walk(next);
+        })
+      }
+    }
+    walk(pixel);
+  });
+}
+
+board.every(500, function() {
+  streak(board.random());
+});
+</code></pre>
+
+<h3>Gradient Fade</h3>
+
+<pre><code>function fadingWalk(pixel) {
+  pixel.fade('blue', 'red', 2000);
+  board.after(2000 / 64, function() {
+    fadingWalk(pixel.next());
+  });
+}
+fadingWalk(board.at(0));
+</code></pre>
   </body>
 </html>
