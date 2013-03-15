@@ -1,3 +1,6 @@
+// Many thanks to Ben for creating this!
+// https://github.com/casiotone
+
 var bounds = [7,6];
 var puck = [2,3];
 var velocity = [1, 1];
