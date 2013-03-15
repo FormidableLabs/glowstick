@@ -17,6 +17,9 @@ var translationMatrix = [
 ];
 
 function BoardTransport(fd, callback) {
+  this.buffer = [];
+  this.bufferTimeout;
+  this.bufferDraining = false;
   this.pixels = _.range(0, 64).map(function(pixel) {
     return [0, 0, 0];
   });
@@ -24,16 +27,32 @@ function BoardTransport(fd, callback) {
   this.port = new SerialPort.SerialPort(fd, {
     baudrate: 115200
   });
+  this.$write = this.port.write;
+  this.port.write = _.bind(function(data) {
+    console.log(data);
+    this.pushBuffer(data);
+  }, this);
   this.port.on('open', callback);
 }
 
-// add a delay of 33ms (1000ms / 33ms === 30fps)
-function wrapCallback(callback) {
-  return function() {
-    setTimeout(callback || function() {}, 33);
+BoardTransport.prototype.pushBuffer = function(data) {
+  this.buffer.push(data);
+  if (!this.bufferDraining) {
+    this.drainBuffer();
   }
-}
+};
 
+BoardTransport.prototype.drainBuffer = function() {
+  if (this.buffer.length) {
+    this.bufferDraining = true;
+    this.$write.call(this.port, this.buffer.pop(), _.bind(function() {
+      this.bufferDraining = false;
+      this.drainBuffer();
+    }, this));
+  }
+};
+
+/*
 BoardTransport.prototype.writeFrame = function(pixels, complete) {
   var port = this.port;
   var translatedPixels = [];
@@ -75,7 +94,7 @@ BoardTransport.prototype.writeFrame = function(pixels, complete) {
     }    
   ], wrapCallback(complete));
 };
-
+*/
 BoardTransport.prototype.rainbowPixel = function(index, length, complete) {
   if (this.pixelsIntervals[index]) {
     clearInterval(this.pixelsIntervals[index]);
@@ -110,7 +129,7 @@ BoardTransport.prototype.rainbowPixel = function(index, length, complete) {
   step();
 };
 
-BoardTransport.prototype.fadePixel = function(index, from, to, duration, complete) {
+BoardTransport.prototype.fadePixel = function(index, from, to, duration) {
   if (this.pixelsIntervals[index]) {
     clearInterval(this.pixelsIntervals[index]);
     clearTimeout(this.pixelsIntervals[index]);
@@ -124,7 +143,7 @@ BoardTransport.prototype.fadePixel = function(index, from, to, duration, complet
       clearInterval(this.pixelsIntervals[index]);
       clearTimeout(this.pixelsIntervals[index]);
       this.pixels[index] = to;
-      this.port.write([255, 2, 0, translationMatrix[index]].concat(to), complete);
+      this.port.write([255, 2, 0, translationMatrix[index]].concat(to));
     }
     var color = [
       Math.max(0, Math.min(254, parseInt(lerp(from[0], to[0], u)))),
@@ -132,9 +151,7 @@ BoardTransport.prototype.fadePixel = function(index, from, to, duration, complet
       Math.max(0, Math.min(254, parseInt(lerp(from[2], to[2], u))))
     ];
     this.pixels[index] = color;
-
-    console.log(color);
-    this.port.write([255, 2, 0, translationMatrix[index]].concat(color), complete);
+    this.port.write([255, 2, 0, translationMatrix[index]].concat(color));
     u += stepU;
   }, this), intervalLength);
 };
@@ -145,20 +162,20 @@ function lerp(a, b, u) {
   return (1 - u) * a + u * b;
 };
 
-BoardTransport.prototype.writePixel = function(index, color, complete) {
+BoardTransport.prototype.writePixel = function(index, color) {
   if (this.pixelsIntervals[index]) {
     clearInterval(this.pixelsIntervals[index])
   }
   this.pixels[index] = color;
-  this.port.write([255, 2, 0, translationMatrix[index]].concat(color), complete);
+  this.port.write([255, 2, 0, translationMatrix[index]].concat(color));
 };
 
-BoardTransport.prototype.clear = function(callback) {
-  this.port.write([255, 10], wrapCallback(callback));
+BoardTransport.prototype.clear = function() {
+  this.port.write([255, 10]);
 };
 
-BoardTransport.prototype.test = function(callback) {
-  this.port.write([255, 20], wrapCallback(callback));
+BoardTransport.prototype.test = function() {
+  this.port.write([255, 20]);
 };
 
 BoardTransport.list = function() {
