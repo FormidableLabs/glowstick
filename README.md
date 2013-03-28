@@ -66,6 +66,16 @@ Select a column of pixels.
 
     var pixels = board.row(0).fade('black', 'white', 1000);
 
+### random **board.random([number])**
+
+Return a given number of random pixels.
+
+    // get a single random pixel
+    board.random().set('purple')
+
+    // get 5 random pixels
+    board.random(5).set('orange')
+
 ### js **board.js()**
 
 Displays a lovely JS logo.

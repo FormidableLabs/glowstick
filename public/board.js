@@ -68,8 +68,15 @@ var board = {
       pixel.set([0, 0, 0]);
     });
   },
-  random: function() {
-    return this.at(Math.floor(Math.random() * (config.size * config.size)));
+  random: function(i) {
+    if (typeof i === 'undefined') {
+      i = 1;
+    }
+    var pixels = [];
+    for (var x = 0; x < i; ++x) {
+      pixels.push(this._pixels[Math.floor(Math.random() * (config.size * config.size))]);
+    }
+    return new Pixels(_.uniq(pixels));
   },
   js: function() {
     var yellw = [241, 220, 63],
