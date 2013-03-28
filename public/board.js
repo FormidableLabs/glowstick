@@ -342,12 +342,6 @@ Pixels.prototype.fade = function(from, to, duration, complete) {
   return this;
 };
 
-Pixels.prototype.rainbow = function(duration, complete) {
-  if (complete) {
-    setTimeout(complete, duration);
-  }
-};
-
 Pixels.prototype.inspect = function() {
   var output = 'Pixels (' + this.length + ')';
   if (this.length) {

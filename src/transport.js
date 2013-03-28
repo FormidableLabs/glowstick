@@ -52,49 +52,7 @@ BoardTransport.prototype.drainBuffer = function() {
   }
 };
 
-/*
-BoardTransport.prototype.writeFrame = function(pixels, complete) {
-  var port = this.port;
-  var translatedPixels = [];
-  pixels.forEach(function(pixel, i) {
-    if (this.pixelsIntervals[i]) {
-      clearInterval(this.pixelsIntervals[i]);
-      this.pixels[i] = pixel;
-    }
-    translatedPixels[translationMatrix[i]] = pixel;
-  }, this);
-  async.series([
-    function(next) {
-      var commandFrame = [255, 1, 0, 0];
-      for (var i = 0; i < 16; ++i) {
-        commandFrame.push(translatedPixels[i][0], translatedPixels[i][1], translatedPixels[i][2]);
-      }
-      port.write(commandFrame, next);
-    },
-    function(next) {
-      var commandFrame = [255, 1, 0, 16];
-      for (var i = 16; i < 32; ++i) {
-        commandFrame.push(translatedPixels[i][0], translatedPixels[i][1], translatedPixels[i][2]);
-      }
-      port.write(commandFrame, next);
-    },
-    function(next) {
-      var commandFrame = [255, 1, 0, 32];
-      for (var i = 32; i < 48; ++i) {
-        commandFrame.push(translatedPixels[i][0], translatedPixels[i][1], translatedPixels[i][2]);
-      }
-      port.write(commandFrame, next);
-    },
-    function(next) {
-      var commandFrame = [255, 1, 0, 48];
-      for (var i = 48; i < 64; ++i) {
-        commandFrame.push(translatedPixels[i][0], translatedPixels[i][1], translatedPixels[i][2]);
-      }
-      port.write(commandFrame, next);
-    }    
-  ], wrapCallback(complete));
-};
-*/
+
 BoardTransport.prototype.rainbowPixel = function(index, length, complete) {
   if (this.pixelsIntervals[index]) {
     clearInterval(this.pixelsIntervals[index]);
