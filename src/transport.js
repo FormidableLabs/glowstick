@@ -16,6 +16,10 @@ var translationMatrix = [
    7,  6,  5,  4,  3,  2,  1,  0
 ];
 
+function cleanInputColor(color) {
+  return Math.max(0, Math.min(254, parseInt(color, 10)));
+}
+
 function BoardTransport(fd, callback) {
   this.buffer = [];
   this.bufferTimeout;
@@ -109,7 +113,11 @@ BoardTransport.prototype.fadePixel = function(index, from, to, duration) {
       Math.max(0, Math.min(254, parseInt(lerp(from[2], to[2], u))))
     ];
     this.pixels[index] = color;
-    this.port.write([255, 2, 0, translationMatrix[index]].concat(color));
+    this.port.write([255, 2, 0, translationMatrix[index]].concat([
+      cleanInputColor(color[0]),
+      cleanInputColor(color[1]),
+      cleanInputColor(color[2])
+    ]));
     u += stepU;
   }, this), intervalLength);
 };
@@ -125,7 +133,11 @@ BoardTransport.prototype.writePixel = function(index, color) {
     clearInterval(this.pixelsIntervals[index])
   }
   this.pixels[index] = color;
-  this.port.write([255, 2, 0, translationMatrix[index]].concat(color));
+  this.port.write([255, 2, 0, translationMatrix[index]].concat([
+    cleanInputColor(color[0]),
+    cleanInputColor(color[1]),
+    cleanInputColor(color[2])
+  ]));
 };
 
 BoardTransport.prototype.clear = function() {

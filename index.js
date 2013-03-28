@@ -15,10 +15,6 @@ boards.forEach(function(fd) {
   });
 });
 
-function cleanInputColor(color) {
-  return Math.max(0, Math.min(254, parseInt(color, 10)));
-}
-
 function initBoard(board) {
   server.post('/clear', function(request, response) {
     board.clear();
@@ -28,7 +24,7 @@ function initBoard(board) {
   server.post('/update', function(request, response) {
     request.body.commands.forEach(function(command) {
       if (command.command === 'set') {
-        board.writePixel(command.index, [cleanInputColor(command.r), cleanInputColor(command.g), cleanInputColor(command.b)]);
+        board.writePixel(command.index, [command.r, command.g, command.b]);
       } else if (command.command === 'rainbow') {
         board.rainbowPixel(
           command.index,
@@ -37,8 +33,8 @@ function initBoard(board) {
       } else if (command.command === 'fade') {
         board.fadePixel(
           command.index,
-          [cleanInputColor(command.from.r), cleanInputColor(command.from.g), cleanInputColor(command.from.b)],
-          [cleanInputColor(command.to.r), cleanInputColor(command.to.g), cleanInputColor(command.to.b)],
+          [command.from.r, command.from.g, command.from.b],
+          [command.to.r, command.to.g, command.to.b],
           command.duration
         );
       }
