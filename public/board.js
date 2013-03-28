@@ -78,10 +78,31 @@ var board = {
     }
     return new Pixels(_.uniq(pixels));
   },
+  set: function(data) {
+    if (typeof data === 'string') {
+      this.all().set(data);
+    } else {
+      var commands = [];
+      _.each(data, function(pixel, i) {
+          commands.push({
+            command: 'set',
+            index: i,
+            r: pixel[0],
+            g: pixel[1],
+            b: pixel[2]
+          });
+        }, this);
+      $.ajax({
+        type: 'post',
+        url: '/update',
+        data: {commands: commands}
+      });
+    }
+  },
   js: function() {
     var yellw = [241, 220, 63],
         black = [50, 51, 48];
-    var jsLogo = [
+    this.set([
       yellw, yellw, yellw, yellw, yellw, yellw, yellw, yellw,
       yellw, yellw, yellw, yellw, yellw, yellw, yellw, yellw,
       yellw, yellw, yellw, yellw, yellw, yellw, yellw, yellw,
@@ -90,22 +111,7 @@ var board = {
       yellw, yellw, black, yellw, yellw, black, black, black,
       yellw, yellw, black, yellw, yellw, yellw, yellw, black,
       yellw, black, black, yellw, yellw, black, black, black
-    ];
-    var commands = [];
-    _.each(this._pixels, function(pixel) {
-        commands.push({
-          command: 'set',
-          index: pixel.index,
-          r: jsLogo[pixel.index][0],
-          g: jsLogo[pixel.index][1],
-          b: jsLogo[pixel.index][2]
-        });
-      }, this);
-    $.ajax({
-      type: 'post',
-      url: '/update',
-      data: {commands: commands}
-    });
+    ]);
   }
 };
 

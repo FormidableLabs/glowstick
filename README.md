@@ -44,6 +44,16 @@ Select all of the pixels.
 
     var pixels = board.all();
 
+### set **board.set(data)**
+
+Set all of the pixels on the board. May be a color:
+
+    board.set('red')
+
+or an array of 64 colors:
+
+    board.set([[r, g, b], [r, g, b], ...])
+
 ### at **board.at(index)**
 
 Select a pixel at a given index:
