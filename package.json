@@ -5,6 +5,10 @@
     "async": "*",
     "express": "*",
     "underscore": "*",
-    "serialport": "*"
+    "serialport": "*",
+    "request": "*"
+  },
+  "scripts": {
+    "start": "node index.js"
   }
 }

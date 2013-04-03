@@ -2,6 +2,138 @@
 
 A jQuery like API for making LEDs blink in delightful patterns.
 
+## Architecture
+
+A working glowstick setup consists of the physical board and a machine running the glowstick server physically connected to the board. The machine exposes a REST API that will accept commands to update individual pixels on the board, and translates these into serial commands that are sent to the board.
+
+## Running the Server
+
+The machine running the server must have a physical USB connection directly to the board. After the board is connected:
+
+    npm install glowstick
+    sudo npm start
+
+The REST interface will then be available, as will a web server running on port 80 with documentation and the client library loaded in the browser.
+
+## Browser Interface
+
+The *board* object described below is available on the webserver (port 80) started by the machine physically connected to the board.
+
+## REST Interface
+
+All commands must be sent with a `Content-Type: application/json` header.
+To clear the board send:
+
+    POST /clear
+
+All other commands are sent via:
+
+    POST /update
+
+An update must consist of a `commands` array, each command object may represent a `set` or a `fade`. A `set` is composed of:
+
+- `command` with a value of "set"
+- `index` what pixel to update
+- `r` 0 - 255
+- `g` 0 - 255
+- `b` 0 - 255
+
+An example `set` command:
+
+    {
+      "commands": [
+        {
+          "command": "set",
+          "index": 0,
+          "r": 255,
+          "g": 0,
+          "b": 0
+        }
+      ]
+    }
+
+A `fade` command is composed of:
+
+- `command` with a value of "set"
+- `index` what pixel to update
+- `from.r` 0 - 255
+- `from.g` 0 - 255
+- `from.b` 0 - 255
+- `to.r` 0 - 255
+- `to.g` 0 - 255
+- `to.b` 0 - 255
+- `duration` in ms
+
+An example `fade` command:
+
+    {
+      "commands": [
+        {
+          "command": "fade",
+          "index": 0,
+          "from": {
+            "r": 255,
+            "g": 255,
+            "b": 255
+          },
+          "to": {
+            "r": 255,
+            "g": 255,
+            "b": 255
+          },
+          "duration": 1000
+        }
+      ]
+    }
+
+## Node Interface
+
+To run the `board` interface described in this document:
+
+    npm install glowstick-client
+    node
+    var board = require('glowstick-client');
+    board.connect('http://board-server-address');
+    board.all().set('teal');
+
+## Mocha Test Reporter
+
+A simple test reporter might look like:
+
+    var board = require('glowstick-client');
+        board.connect('http://localhost');
+    
+    module.exports = function(runner) {
+      board.clear()
+      var i = 0,
+          failed = 0;
+      function incriment() {
+        ++i;
+        if (i > 63) {
+          i = 0;
+        }
+      }
+      runner.on('pass', function(test) {
+        board.at(i).fade('white', '#333333', 2000);
+        incriment();
+      });
+      runner.on('fail', function(test) {
+        console.log('Failed: ' + test.title);
+        board.at(i).set('red');
+        incriment();
+        ++failed;
+      });
+      runner.on('end', function(){
+        process.exit(failed);
+      });
+    };
+
+To run it:
+
+    mocha --reporter /full/path/to/reporter.js
+
+# Board API
+
 ## Colors
 
 All colors are specified in an RGB array in this format:
@@ -255,3 +387,20 @@ Individual pixels objects should only be used to check the status of a pixel, an
       });
     }
     fadingWalk(board.at(0));
+
+### Countdown
+
+    function countdown(duration) {
+      var interval = Math.floor(duration / 64);
+      board.all().set('white');
+      function walk(pixel) {
+        pixel.fade('white', 'black', interval, function() {
+          var previousPixel = pixel.previous({wrap: false});
+          if (previousPixel) {
+            walk(previousPixel);
+          }
+        });
+      }
+      walk(board.at(63));
+    }
+    countdown(10 * 1000);
