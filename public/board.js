@@ -128,6 +128,9 @@ var board = {
       yellw, yellw, black, yellw, yellw, yellw, yellw, black,
       yellw, black, black, yellw, yellw, black, black, black
     ]);
+  },
+  empty: function() {
+    return new Pixels;
   }
 };
 

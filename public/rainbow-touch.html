@@ -1,0 +1,82 @@
+<html>
+  <head>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/thorax/2.0.0rc3/thorax.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/async/1.22/async.min.js"></script>
+    <script src="board.js"></script>
+    <script>
+
+      function hsvToRgb(h, s, v) {
+          var r, g, b;
+      
+          var i = Math.floor(h * 6);
+          var f = h * 6 - i;
+          var p = v * (1 - s);
+          var q = v * (1 - f * s);
+          var t = v * (1 - (1 - f) * s);
+      
+          switch(i % 6){
+              case 0: r = v, g = t, b = p; break;
+              case 1: r = q, g = v, b = p; break;
+              case 2: r = p, g = v, b = t; break;
+              case 3: r = p, g = q, b = v; break;
+              case 4: r = t, g = p, b = v; break;
+              case 5: r = v, g = p, b = q; break;
+          }
+      
+          return [
+            Math.floor(r * 255),
+            Math.floor(g * 255),
+            Math.floor(b * 255)
+          ];
+      }
+
+      function zeroFill( number, width ) {
+        width -= number.toString().length;
+        if ( width > 0 ) {
+          return new Array( width + (/\./.test( number ) ? 2 : 1) ).join( '0' ) + number;
+        }
+        return number + ""; // always return a string
+      }
+
+      $(function(){
+        var h = 0;
+        setInterval(function() {
+          h += 0.01;
+          if (h > 1) {
+            h = 0;
+          }
+          var rgb = hsvToRgb(h, 1, 1);
+          $('body').css({
+            backgroundColor: '#' + zeroFill(rgb[0].toString(16), 2) + zeroFill(rgb[1].toString(16), 2) + zeroFill(rgb[2].toString(16), 2)
+          })
+        }, 50);
+        window.addEventListener("touchmove", _.throttle(function(event){
+          event.preventDefault();
+          _.each(event.touches, function(touch) {
+            var x = Math.floor((touch.pageX / $(window).width()) * 8);
+            var y = Math.floor((touch.pageY / $(window).height()) * 8);
+            var origin = board.at(x, y).fade({h: h, s: 1, v: 1}, {h: 0, s: 0, v: 0}, 2000);
+            //var pixels = board.empty();
+            //pixels.add(origin.above({wrap: false}));
+            //pixels.add(origin.below({wrap: false}));
+            //pixels.add(origin.left({wrap: false}));
+            //pixels.add(origin.right({wrap: false}));
+            //pixels.fade({h: h, s: 1, v: 0.5}, {h: 0, s: 0, v: 0}, 2000);
+          });
+        }, 25));
+      });
+
+    </script>
+    <style>
+      body, html {
+        padding:0;
+        margin:0;
+        overflow:hidden;
+        width:100%;
+        height:100%;
+      }
+    </style>
+  </head>
+  <body>
+  </body>
+</html>
