@@ -86,6 +86,8 @@ An example `fade` command:
       ]
     }
 
+Both `set` and `fade` commands may have `h`, `s` and `v` values ranging from 0 - 1, instead of RGB.
+
 ## Node Interface
 
 To run the `board` interface described in this document:

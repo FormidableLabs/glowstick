@@ -27,22 +27,33 @@ border: none;      }
     <script src="board.js"></script>
   </head>
   <body>
-    <h1>Glowstick</h1>
-    <p><b>The library described on this page is loaded in your browser. Right click "inspect element" then open up your JavaScript console.</b> Select "logs" on the bottom bar to show only the code and not the (many) ajax requests which will be sent.</p>
-
-    <pre><code>board.at(0).set('blue')</code></pre>
-
-    <hr>
+<h1>Glowstick</h1>
 
 <p>A jQuery like API for making LEDs blink in delightful patterns.</p>
 
 <h2>Colors</h2>
 
-<p>All colors are specified in an RGB array in this format:</p>
+<p>All colors are specified in an RGB object, with values ranging from 0 to 255:</p>
 
-<pre><code>[255, 255, 255]
+<pre><code>{
+  r: 0,
+  g: 255,
+  b: 0
+}
+</code></pre>
 
-pixels.fade([0, 0, 0], [255, 255, 255], 2000);
+<p>or and HSV object with values ranging from 0 - 1:</p>
+
+<pre><code>{
+  h: 0.23,
+  s: 1,
+  l: 1
+}
+</code></pre>
+
+<p>A same call would look like:</p>
+
+<pre><code>pixels.fade({r: 0, g: 0, b: 0}, {r: 255, g: 255, b: 255}, 2000);
 </code></pre>
 
 <p>Alternatively <a href="http://www.w3schools.com/tags/ref_colornames.asp">CSS color names</a> may be specified:</p>
@@ -84,6 +95,18 @@ pixels.fade([0, 0, 0], [255, 255, 255], 2000);
 <pre><code>var pixels = board.all();
 </code></pre>
 
+<h3>set <strong>board.set(data)</strong></h3>
+
+<p>Set all of the pixels on the board. May be a color:</p>
+
+<pre><code>board.set('red')
+</code></pre>
+
+<p>or an array of 64 colors:</p>
+
+<pre><code>board.set([{r, g, b}, {r, g, b}, ...])
+</code></pre>
+
 <h3>at <strong>board.at(index)</strong></h3>
 
 <p>Select a pixel at a given index:</p>
@@ -110,6 +133,17 @@ pixels.fade([0, 0, 0], [255, 255, 255], 2000);
 <pre><code>var pixels = board.row(0).fade('black', 'white', 1000);
 </code></pre>
 
+<h3>random <strong>board.random([number])</strong></h3>
+
+<p>Return a given number of random pixels.</p>
+
+<pre><code>// get a single random pixel
+board.random().set('purple')
+
+// get 5 random pixels
+board.random(5).set('orange')
+</code></pre>
+
 <h3>js <strong>board.js()</strong></h3>
 
 <p>Displays a lovely JS logo.</p>
@@ -127,7 +161,7 @@ pixels.fade([0, 0, 0], [255, 255, 255], 2000);
 <p>Fade between two colors.</p>
 
 <pre><code>board.row(2).fade('black','white', 1000);
-board.column(1).fade([255, 255, 255], [0, 0, 0], 1000);
+board.column(1).fade({r: 255, g: 255, b: 255}, {r: 0, g: 0, b: 0}, 1000);
 </code></pre>
 
 <h3>add</h3>
@@ -224,6 +258,18 @@ walk(board.at(0, 0));
 columnWalk(board.column(0));
 </code></pre>
 
+<h3>Rainbow Walk</h3>
+
+<pre><code>var length = 3000;
+function walk(pixel) {
+  pixel.fade({h: 0, s: 1, v: 1}, {h: 1, s: 1, v: 1}, length);
+  board.after(Math.floor(length / 64), function() {
+    walk(pixel.next());
+  });
+}
+walk(board.at(0, 0));
+</code></pre>
+
 <h3>Blink (Red / Black)</h3>
 
 <pre><code>board.clear();
@@ -254,11 +300,24 @@ board.every(25, function() {
 });
 </code></pre>
 
+<h3>Rainbow Blink</h3>
+
+<pre><code>board.clear();
+
+function blink(pixel) {
+  pixel.fade({h: 0, s: 1, v: 1}, {h: 1, s: 1, v: 1}, 15000);
+}
+
+board.every(100, function() {
+  blink(board.random());
+});
+</code></pre>
+
 <h3>Star</h3>
 
 <pre><code>function streak(pixel) {
   function fade(pixel, callback) {
-    pixel.fade([128, 128, 128], 'black', 250);
+    pixel.fade({r: 128, g: 128, b: 128}, 'black', 250);
     board.after(50, callback);
   }
 
@@ -292,5 +351,22 @@ board.every(500, function() {
 }
 fadingWalk(board.at(0));
 </code></pre>
-  </body>
+
+<h3>Countdown</h3>
+
+<pre><code>function countdown(duration) {
+  var interval = Math.floor(duration / 64);
+  board.all().set('white');
+  function walk(pixel) {
+    pixel.fade('white', 'black', interval, function() {
+      var previousPixel = pixel.previous({wrap: false});
+      if (previousPixel) {
+        walk(previousPixel);
+      }
+    });
+  }
+  walk(board.at(63));
+}
+countdown(10 * 1000);
+</code></pre>  </body>
 </html>
