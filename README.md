@@ -136,11 +136,15 @@ To run it:
 
 ## Colors
 
-All colors are specified in an RGB array in this format:
+All colors are specified in an RGB or HSL object in this format:
 
-    [255, 255, 255]
+    {
+      r: 0,
+      g: 0,
+      b: 0
+    }
 
-    pixels.fade([0, 0, 0], [255, 255, 255], 2000);
+    pixels.fade({r: 0, g: 0, b: 0}, {r: 255, g: 255, b: 255}, 2000);
 
 Alternatively [CSS color names](http://www.w3schools.com/tags/ref_colornames.asp) may be specified:
 
@@ -184,7 +188,7 @@ Set all of the pixels on the board. May be a color:
 
 or an array of 64 colors:
 
-    board.set([[r, g, b], [r, g, b], ...])
+    board.set([{r, g, b}, {r, g, b}, ...])
 
 ### at **board.at(index)**
 
@@ -235,7 +239,7 @@ Set pixels to be a certain color.
 Fade between two colors.
 
     board.row(2).fade('black','white', 1000);
-    board.column(1).fade([255, 255, 255], [0, 0, 0], 1000);
+    board.column(1).fade({r: 255, g: 255, b: 255}, {r: 0, g: 0, b: 0}, 1000);
 
 ### add
 
@@ -355,7 +359,7 @@ Individual pixels objects should only be used to check the status of a pixel, an
 
     function streak(pixel) {
       function fade(pixel, callback) {
-        pixel.fade([128, 128, 128], 'black', 250);
+        pixel.fade({r: 128, g: 128, b: 128}, 'black', 250);
         board.after(50, callback);
       }
     
