@@ -16,10 +16,6 @@ var translationMatrix = [
    7,  6,  5,  4,  3,  2,  1,  0
 ];
 
-function cleanInputColor(color) {
-  return Math.max(0, Math.min(254, parseInt(color, 10)));
-}
-
 function BoardTransport(fd, callback) {
   this.buffer = [];
   this.bufferTimeout;
@@ -56,88 +52,68 @@ BoardTransport.prototype.drainBuffer = function() {
   }
 };
 
-
-BoardTransport.prototype.rainbowPixel = function(index, length, complete) {
-  if (this.pixelsIntervals[index]) {
-    clearInterval(this.pixelsIntervals[index]);
-    clearTimeout(this.pixelsIntervals[index]);
-  }
-  function rgbFromHue(hue) {
-    var h = hue / 60;
-    var c = 255;
-    var x = (1 - Math.abs(h % 2 - 1)) * 255;
-    var color;
-    var i = Math.floor(h);
-    if (i == 0) color = [c, x, 0];
-    else if (i == 1) color = [x, c, 0];
-    else if (i == 2) color = [0, c, x];
-    else if (i == 3) color = [0, x, c];
-    else if (i == 4) color = [x, 0, c];
-    else color = [c, 0, x];
-    return color;
-  }
-  var stepSize = 3;
-  var timeoutLength = length / (360 / stepSize) 
-  var i = 0;
-  var step = _.bind(function() {
-    i += stepSize;
-    var color = rgbFromHue(i);
-    this.pixels[i] = color;
-    this.port.write([255, 2, 0, translationMatrix[index]].concat(color), complete);
-    if (i <= 360) {
-      this.pixelsIntervals[i] = setTimeout(step, timeoutLength);
-    }
-  }, this);
-  step();
-};
-
 BoardTransport.prototype.fadePixel = function(index, from, to, duration) {
+  //TODO: clean this up, remove outer most if / else, run hsv/rgb through
+  //same code path
   if (this.pixelsIntervals[index]) {
     clearInterval(this.pixelsIntervals[index]);
     clearTimeout(this.pixelsIntervals[index]);
   }
-  var intervalLength = 33,
-      steps = duration / intervalLength,
-      stepU = 1.0 / steps,
-      u = 0.0;
-  this.pixelsIntervals[index] = setInterval(_.bind(function() {
-    if (u > 1.0) {
-      clearInterval(this.pixelsIntervals[index]);
-      clearTimeout(this.pixelsIntervals[index]);
-      this.pixels[index] = to;
-      this.port.write([255, 2, 0, translationMatrix[index]].concat(to));
-    }
-    var color = [
-      Math.max(0, Math.min(254, parseInt(lerp(from[0], to[0], u)))),
-      Math.max(0, Math.min(254, parseInt(lerp(from[1], to[1], u)))),
-      Math.max(0, Math.min(254, parseInt(lerp(from[2], to[2], u))))
-    ];
-    this.pixels[index] = color;
-    this.port.write([255, 2, 0, translationMatrix[index]].concat([
-      cleanInputColor(color[0]),
-      cleanInputColor(color[1]),
-      cleanInputColor(color[2])
-    ]));
-    u += stepU;
-  }, this), intervalLength);
+  if (from.r) {
+    var intervalLength = 33,
+        steps = duration / intervalLength,
+        stepU = 1.0 / steps,
+        u = 0.0,
+        fromArray = rgbArrayFromCommand(from),
+        toArray = rgbArrayFromCommand(to);
+    this.pixelsIntervals[index] = setInterval(_.bind(function() {
+      if (u > 1.0) {
+        clearInterval(this.pixelsIntervals[index]);
+        clearTimeout(this.pixelsIntervals[index]);
+        this.pixels[index] = rgbArrayFromCommand(to);
+        this.port.write([255, 2, 0, translationMatrix[index]].concat(toArray));
+      }
+      var color = [
+        Math.max(0, Math.min(254, parseInt(lerp(fromArray[0], toArray[0], u)))),
+        Math.max(0, Math.min(254, parseInt(lerp(fromArray[1], toArray[1], u)))),
+        Math.max(0, Math.min(254, parseInt(lerp(fromArray[2], toArray[2], u))))
+      ];
+      this.pixels[index] = color;
+      this.port.write([255, 2, 0, translationMatrix[index]].concat(color));
+      u += stepU;
+    }, this), intervalLength);
+  } else {
+    var intervalLength = 33,
+        steps = duration / intervalLength,
+        stepU = 1.0 / steps,
+        u = 0.0;
+    this.pixelsIntervals[index] = setInterval(_.bind(function() {
+      if (u > 1.0) {
+        clearInterval(this.pixelsIntervals[index]);
+        clearTimeout(this.pixelsIntervals[index]);
+        this.pixels[index] = rgbArrayFromCommand(to);
+        this.port.write([255, 2, 0, translationMatrix[index]].concat(rgbArrayFromCommand(to)));
+      }
+      var hsvStep = {
+        h: lerp(from.h, to.h, u),
+        s: lerp(from.s, to.s, u),
+        v: lerp(from.v, to.v, u)
+      };
+      var color = rgbArrayFromCommand(hsvStep);
+      this.pixels[index] = color;
+      this.port.write([255, 2, 0, translationMatrix[index]].concat(color));
+      u += stepU;
+    }, this), intervalLength);
+  }
 };
 
-// linear interpolation between two values a and b
-// u controls amount of a/b and is in range [0.0,1.0]
-function lerp(a, b, u) {
-  return (1 - u) * a + u * b;
-};
-
-BoardTransport.prototype.writePixel = function(index, color) {
+BoardTransport.prototype.writePixel = function(index, command) {
   if (this.pixelsIntervals[index]) {
     clearInterval(this.pixelsIntervals[index])
   }
+  var color = rgbArrayFromCommand(command);
   this.pixels[index] = color;
-  this.port.write([255, 2, 0, translationMatrix[index]].concat([
-    cleanInputColor(color[0]),
-    cleanInputColor(color[1]),
-    cleanInputColor(color[2])
-  ]));
+  this.port.write([255, 2, 0, translationMatrix[index]].concat(color));
 };
 
 BoardTransport.prototype.clear = function() {
@@ -157,5 +133,58 @@ BoardTransport.list = function() {
   });
   return boardPointers;
 };
+
+// linear interpolation between two values a and b
+// u controls amount of a/b and is in range [0.0,1.0]
+function lerp(a, b, u) {
+  return (1 - u) * a + u * b;
+};
+
+function rgbArrayFromCommand(command) {
+  if (command.r) {
+    return [
+      cleanInputColor(command.r),
+      cleanInputColor(command.g),
+      cleanInputColor(command.b)
+    ];
+  } else {
+    var rgb = hsvToRgb(command.h, command.s, command.v);
+    return [
+      cleanInputColor(rgb[0]),
+      cleanInputColor(rgb[1]),
+      cleanInputColor(rgb[2])
+    ];
+  }
+}
+
+function hsvToRgb(h, s, v) {
+    var r, g, b;
+
+    var i = Math.floor(h * 6);
+    var f = h * 6 - i;
+    var p = v * (1 - s);
+    var q = v * (1 - f * s);
+    var t = v * (1 - (1 - f) * s);
+
+    switch(i % 6){
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+
+    return [
+      Math.floor(r * 255),
+      Math.floor(g * 255),
+      Math.floor(b * 255)
+    ];
+}
+
+
+function cleanInputColor(color) {
+  return Math.max(0, Math.min(254, parseInt(color, 10)));
+}
 
 module.exports = BoardTransport;

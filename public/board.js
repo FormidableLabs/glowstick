@@ -386,7 +386,6 @@ Pixels.prototype.set = function(color) {
       index: pixel.index
     }, pixel.color));
   }, this);
-  console.log(commands);
   request('post', '/update', {commands: commands});
   return this;
 };

@@ -24,17 +24,12 @@ function initBoard(board) {
   server.post('/update', function(request, response) {
     request.body.commands.forEach(function(command) {
       if (command.command === 'set') {
-        board.writePixel(command.index, [command.r, command.g, command.b]);
-      } else if (command.command === 'rainbow') {
-        board.rainbowPixel(
-          command.index,
-          command.duration
-        );
+        board.writePixel(command.index, command);
       } else if (command.command === 'fade') {
         board.fadePixel(
           command.index,
-          [command.from.r, command.from.g, command.from.b],
-          [command.to.r, command.to.g, command.to.b],
+          command.from,
+          command.to,
           command.duration
         );
       }

@@ -136,13 +136,23 @@ To run it:
 
 ## Colors
 
-All colors are specified in an RGB or HSL object in this format:
+All colors are specified in an RGB object, with values ranging from 0 to 255:
 
     {
       r: 0,
-      g: 0,
+      g: 255,
       b: 0
     }
+
+or and HSV object with values ranging from 0 - 1:
+
+    {
+      h: 0.23,
+      s: 1,
+      l: 1
+    }
+
+A same call would look like:
 
     pixels.fade({r: 0, g: 0, b: 0}, {r: 255, g: 255, b: 255}, 2000);
 
@@ -327,6 +337,19 @@ Individual pixels objects should only be used to check the status of a pixel, an
     }
     columnWalk(board.column(0));
 
+
+### Rainbow Walk
+
+    var length = 3000;
+    function walk(pixel) {
+      pixel.fade({h: 0, s: 1, v: 1}, {h: 1, s: 1, v: 1}, length);
+      board.after(Math.floor(length / 64), function() {
+        walk(pixel.next());
+      });
+    }
+    walk(board.at(0, 0));
+
+
 ### Blink (Red / Black)
 
     board.clear();
@@ -352,6 +375,18 @@ Individual pixels objects should only be used to check the status of a pixel, an
     }
     
     board.every(25, function() {
+      blink(board.random());
+    });
+
+### Rainbow Blink
+
+    board.clear();
+    
+    function blink(pixel) {
+      pixel.fade({h: 0, s: 1, v: 1}, {h: 1, s: 1, v: 1}, 15000);
+    }
+    
+    board.every(100, function() {
       blink(board.random());
     });
 
