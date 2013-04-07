@@ -151,7 +151,7 @@ or and HSV object with values ranging from 0 - 1:
     {
       h: 0.23,
       s: 1,
-      l: 1
+      v: 1
     }
 
 A same call would look like:
