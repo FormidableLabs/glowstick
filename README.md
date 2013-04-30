@@ -54,7 +54,7 @@ An example `set` command:
 
 A `fade` command is composed of:
 
-- `command` with a value of "set"
+- `command` with a value of "fade"
 - `index` what pixel to update
 - `from.r` 0 - 255
 - `from.g` 0 - 255
