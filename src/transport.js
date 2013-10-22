@@ -66,6 +66,9 @@ BoardTransport.prototype.drainBuffer = function() {
 };
 
 BoardTransport.prototype.fadePixel = function(index, from, to, duration) {
+  var x = (index % 8);
+  var y = Math.floor(index / 8);
+
   //TODO: clean this up, remove outer most if / else, run hsv/rgb through
   //same code path
   if (this.pixelsIntervals[index]) {
@@ -92,7 +95,7 @@ BoardTransport.prototype.fadePixel = function(index, from, to, duration) {
         Math.max(0, Math.min(254, parseInt(lerp(fromArray[2], toArray[2], u))))
       ];
       this.pixels[index] = color;
-      this.port.write([255, 2, 0, translationMatrix[index]].concat(color));
+      this.sendCommand(packetTypes.PktSetPixelRequest, [x, y].concat(color));
       u += stepU;
     }, this), intervalLength);
   } else {
@@ -114,7 +117,8 @@ BoardTransport.prototype.fadePixel = function(index, from, to, duration) {
       };
       var color = rgbArrayFromCommand(hsvStep);
       this.pixels[index] = color;
-      this.port.write([255, 2, 0, translationMatrix[index]].concat(color));
+
+      this.sendCommand(packetTypes.PktSetPixelRequest, [x, y].concat(color));
       u += stepU;
     }, this), intervalLength);
   }
@@ -122,22 +126,21 @@ BoardTransport.prototype.fadePixel = function(index, from, to, duration) {
 
 BoardTransport.prototype.writePixel = function(index, command) {
   if (this.pixelsIntervals[index]) {
-    clearInterval(this.pixelsIntervals[index])
+    clearInterval(this.pixelsIntervals[index]);
   }
   var color = rgbArrayFromCommand(command);
   this.pixels[index] = color;
 
   var x = (index%8);
   var y = Math.floor(index/8);
-
-  this.sendCommand(packetTypes.PktSetPixelRequest, [x, y, color.r, color.g, color.b]);
+  this.sendCommand(packetTypes.PktSetPixelRequest, [x, y, color[0], color[1], color[2]]);
 };
 
 BoardTransport.prototype.doSelfTest = function(){
   this.sendCommand(packetTypes.PktSelfTestRequest, []);
 };
 
-BoadTransport.prototype.sendCommand = function(type, data){
+BoardTransport.prototype.sendCommand = function(type, data){
   this.port.write([parseInt('81', 16), type, data.length].concat(data));
 };
 
