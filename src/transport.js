@@ -126,21 +126,20 @@ BoardTransport.prototype.writePixel = function(index, command) {
   }
   var color = rgbArrayFromCommand(command);
   this.pixels[index] = color;
-  this.port.write([255, 2, 0, translationMatrix[index]].concat(color));
+
+  var x = (index%8);
+  var y = Math.floor(index/8);
+
+  this.sendCommand(packetTypes.PktSetPixelRequest, [x, y, color.r, color.g, color.b]);
 };
 
-BoardTransport.prototype.setPixel = function(x, y, command) {
-  rgb = rgbArrayFromCommand(command);
-  this.sendCommand(packetTypes.PktSetPixelRequest, [x, y, rgb.r, rgb.g, rgb.b]);
-}
-
-BoardTransport.prototype.doSelfTest(){
+BoardTransport.prototype.doSelfTest = function(){
   this.sendCommand(packetTypes.PktSelfTestRequest, []);
-}
+};
 
 BoadTransport.prototype.sendCommand = function(type, data){
   this.port.write([parseInt('81', 16), type, data.length].concat(data));
-}
+};
 
 BoardTransport.prototype.clear = function() {
   this.port.write([255, 10]);
