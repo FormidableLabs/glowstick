@@ -16,6 +16,19 @@ var translationMatrix = [
    7,  6,  5,  4,  3,  2,  1,  0
 ];
 
+var packetTypes = {
+  "PktNop": 0,
+  "PktVersionRequest": 1,
+  "PktVersionReply": 2,
+  "PktInfoRequest": 3,
+  "PktInfoReply": 4,
+  "PktSelfTestRequest": 5,
+  "PktSelfTestReply": 6,
+  "PktSetPixelRequest": 7,
+  "PktSetScreenRequest": 8
+};
+	
+
 function BoardTransport(fd, callback) {
   this.buffer = [];
   this.bufferTimeout;
@@ -115,6 +128,19 @@ BoardTransport.prototype.writePixel = function(index, command) {
   this.pixels[index] = color;
   this.port.write([255, 2, 0, translationMatrix[index]].concat(color));
 };
+
+BoardTransport.prototype.setPixel = function(x, y, command) {
+  rgb = rgbArrayFromCommand(command);
+  this.sendCommand(packetTypes.PktSetPixelRequest, [x, y, rgb.r, rgb.g, rgb.b]);
+}
+
+BoardTransport.prototype.doSelfTest(){
+  this.sendCommand(packetTypes.PktSelfTestRequest, []);
+}
+
+BoadTransport.prototype.sendCommand = function(type, data){
+  this.port.write([parseInt('81', 16), type, data.length].concat(data));
+}
 
 BoardTransport.prototype.clear = function() {
   this.port.write([255, 10]);
