@@ -93,6 +93,8 @@ void processSerialCommand(){
   }
   else if( ((PacketTypes)sysState.rxBuffer.type) == PktSelfTestRequest ){
     // [STX] [PktSelfTestRequest] [0]
+    selfTest();
+    clearScreen();
   }
   else if( ((PacketTypes)sysState.rxBuffer.type) == PktSetPixelRequest ){
     // [STX] [PktSetPixelRequest] [5] { X, Y, R, G, B}
@@ -104,6 +106,8 @@ void processSerialCommand(){
               sysState.rxBuffer.data[3],  //Green
               sysState.rxBuffer.data[4]   //Blue
             );
+    sendBuffer(screenBuffer, 64);
+
   }
   else if( ((PacketTypes)sysState.rxBuffer.type) == PktSetScreenRequest ){
     
@@ -116,6 +120,7 @@ void processSerialCommand(){
       setPixelByIndex(i, sysState.rxBuffer.data[offset], sysState.rxBuffer.data[offset+1], sysState.rxBuffer.data[offset+2]);
     }
     
+    sendBuffer(screenBuffer, 64);
     sysState.rxFrames++;
   }
 }
@@ -153,7 +158,16 @@ void readSerialCommand(){
 
 				sysState.rxBuffer.length = temp;
 				sysState.rxBuffer.index = 0;
-				sysState.rxState = Rx_PacketData;
+        if(sysState.rxBuffer.length > 0) {
+				  sysState.rxState = Rx_PacketData;
+        }
+        else{
+          //Run command
+          processSerialCommand();
+
+          //Get ready for next packet
+          sysState.rxState = Rx_Idle;
+        }
 			}
 			else if(sysState.rxState == Rx_PacketData){
 				if(sysState.rxBuffer.index < sysState.rxBuffer.length){
@@ -305,8 +319,6 @@ void setup(){
 
 void loop(){
   readSerialCommand();
-  sendBuffer(screenBuffer, 64);
-  delay(sysState.refreshDelay);
 }
 
 

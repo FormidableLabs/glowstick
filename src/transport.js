@@ -36,6 +36,7 @@ function BoardTransport(fd, callback) {
   this.pixels = _.range(0, 64).map(function(pixel) {
     return [0, 0, 0];
   });
+  this.drawInterval;
   this.pixelsIntervals = {};
   this.port = new SerialPort.SerialPort(fd, {
     baudrate: 115200
@@ -46,6 +47,32 @@ function BoardTransport(fd, callback) {
     this.pushBuffer(data);
   }, this);
   this.port.on('open', callback);
+
+  this.dataCallbacks = {};
+  this.port.on( "data", function( chunk ) {
+    
+
+    if(chunk.length >= 3 && chunk.length == chunk[2]+3){
+      var replyPkt = {
+        "stx": chunk[0],
+        "cmd": chunk[1],
+        "data_length": chunk[2],
+      };
+
+      if(replyPkt.data_length > 0){
+        replyPkt.data = chunk.slice(3, chunk[2]+3);
+      }
+
+      console.log(replyPkt);
+      if(this.dataCallbacks[replyPkt.cmd] != null){
+        this.dataCallbacks[ replyPkt.cmd ]( replyPkt );
+      }
+    }
+    else{
+      console.log("length=" + chunk.length + " len=" + chunk[2]);
+      console.log(chunk);
+    }
+  });
 }
 
 BoardTransport.prototype.pushBuffer = function(data) {
@@ -69,12 +96,18 @@ BoardTransport.prototype.fadePixel = function(index, from, to, duration) {
   var x = (index % 8);
   var y = Math.floor(index / 8);
 
+  if(!this.drawInterval){
+    //TODO: Stop draw loop when this.pixelsIntervals[*] are all undefined
+    this.drawInterval = setInterval(_.bind(this.drawScreen, this), 33);
+  }
+
   //TODO: clean this up, remove outer most if / else, run hsv/rgb through
   //same code path
   if (this.pixelsIntervals[index]) {
     clearInterval(this.pixelsIntervals[index]);
     clearTimeout(this.pixelsIntervals[index]);
   }
+
   if (from.r) {
     var intervalLength = 33,
         steps = duration / intervalLength,
@@ -87,15 +120,15 @@ BoardTransport.prototype.fadePixel = function(index, from, to, duration) {
         clearInterval(this.pixelsIntervals[index]);
         clearTimeout(this.pixelsIntervals[index]);
         this.pixels[index] = rgbArrayFromCommand(to);
-        this.port.write([255, 2, 0, translationMatrix[index]].concat(toArray));
       }
-      var color = [
-        Math.max(0, Math.min(254, parseInt(lerp(fromArray[0], toArray[0], u)))),
-        Math.max(0, Math.min(254, parseInt(lerp(fromArray[1], toArray[1], u)))),
-        Math.max(0, Math.min(254, parseInt(lerp(fromArray[2], toArray[2], u))))
-      ];
-      this.pixels[index] = color;
-      this.sendCommand(packetTypes.PktSetPixelRequest, [x, y].concat(color));
+      else{
+        var color = [
+          Math.max(0, Math.min(254, parseInt(lerp(fromArray[0], toArray[0], u)))),
+          Math.max(0, Math.min(254, parseInt(lerp(fromArray[1], toArray[1], u)))),
+          Math.max(0, Math.min(254, parseInt(lerp(fromArray[2], toArray[2], u))))
+        ];
+        this.pixels[index] = color;
+      }
       u += stepU;
     }, this), intervalLength);
   } else {
@@ -108,17 +141,17 @@ BoardTransport.prototype.fadePixel = function(index, from, to, duration) {
         clearInterval(this.pixelsIntervals[index]);
         clearTimeout(this.pixelsIntervals[index]);
         this.pixels[index] = rgbArrayFromCommand(to);
-        this.port.write([255, 2, 0, translationMatrix[index]].concat(rgbArrayFromCommand(to)));
       }
-      var hsvStep = {
-        h: lerp(from.h, to.h, u),
-        s: lerp(from.s, to.s, u),
-        v: lerp(from.v, to.v, u)
-      };
-      var color = rgbArrayFromCommand(hsvStep);
-      this.pixels[index] = color;
+      else{
+        var hsvStep = {
+          h: lerp(from.h, to.h, u),
+          s: lerp(from.s, to.s, u),
+          v: lerp(from.v, to.v, u)
+        };
+        var color = rgbArrayFromCommand(hsvStep);
+        this.pixels[index] = color;
+      }
 
-      this.sendCommand(packetTypes.PktSetPixelRequest, [x, y].concat(color));
       u += stepU;
     }, this), intervalLength);
   }
@@ -136,20 +169,38 @@ BoardTransport.prototype.writePixel = function(index, command) {
   this.sendCommand(packetTypes.PktSetPixelRequest, [x, y, color[0], color[1], color[2]]);
 };
 
-BoardTransport.prototype.doSelfTest = function(){
-  this.sendCommand(packetTypes.PktSelfTestRequest, []);
-};
-
-BoardTransport.prototype.sendCommand = function(type, data){
+BoardTransport.prototype.sendCommand = function(type, data) {
   this.port.write([parseInt('81', 16), type, data.length].concat(data));
 };
 
+BoardTransport.prototype.drawScreen = function() {
+  var pixelData = [];
+
+  for(var i=0; i<this.pixels.length; i++){
+    pixelData = pixelData.concat(this.pixels[i]);
+  }
+
+  this.sendCommand(packetTypes.PktSetScreenRequest, pixelData);
+}
+
+BoardTransport.prototype.getFirmwareInfo = function(callback) {
+  this.dataCallbacks[packetTypes.PktInfoReply] = callback;
+  this.sendCommand(packetTypes.PktInfoRequest, []);
+}
+
+BoardTransport.prototype.getFirmwareVersion = function(callback) {
+  this.dataCallbacks[packetTypes.PktVersionReply] = callback;
+  this.sendCommand(packetTypes.PktVersionRequest, []);
+}
+
 BoardTransport.prototype.clear = function() {
-  this.port.write([255, 10]);
+  this.pixels = _.range(0, 64).map(function(pixel) {
+    return [0, 0, 0];
+  });
 };
 
 BoardTransport.prototype.test = function() {
-  this.port.write([255, 20]);
+  this.sendCommand(packetTypes.PktSelfTestRequest, []);
 };
 
 BoardTransport.list = function() {
@@ -157,6 +208,9 @@ BoardTransport.list = function() {
   fs.readdirSync('/dev/').forEach(function(file) {
     if (file.match(/^tty.usbmodem/)) {
       boardPointers.push('/dev/' + file);
+    }
+    else if(file.match(/^ttyACM/)) {
+      boardPointers.push('/dev/' + file) ;
     }
   });
   return boardPointers;

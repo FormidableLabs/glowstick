@@ -21,6 +21,31 @@ function initBoard(board) {
     response.send();
   });
 
+  server.post('/test', function(request, response) {
+    board.test();
+    response.send();
+  });
+
+  server.post('/info', 
+    function(request, response) {
+      board.getFirmwareInfo(
+        function(reply){
+          response.send(reply);
+        }
+      );
+    }
+  );
+
+server.post('/version', 
+    function(request, response) {
+      board.getFirmwareVersion(
+        function(reply){
+          response.send(reply);
+        }
+      );
+    }
+  );
+
   server.post('/update', function(request, response) {
     request.body.commands.forEach(function(command) {
       if (command.command === 'set') {

@@ -107,6 +107,15 @@ var board = {
       });
     }
   },
+  test: function() {
+    request('post', '/test', {});
+  },
+  info: function() {
+    request('post', '/info', {});
+  },
+  version: function() {
+    request('post', '/version', {});
+  },
   js: function() {
     var yellw = {
       r: 241,
