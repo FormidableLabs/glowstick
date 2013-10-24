@@ -473,7 +473,7 @@ if (typeof module !== 'undefined') {
     url = endpoint.replace(/\/$/, '');
   };
 
-  request = function(type, urlFragment, data) {
+  request = function(type, urlFragment, data, callback) {
     if (!url) {
       throw new Error('use board.connect() to set the endpoint');
     }
@@ -487,16 +487,19 @@ if (typeof module !== 'undefined') {
     }, function(error, response, body) {
       if (error) {
         console.log(error);
+      } else {
+        callback(response, body);
       }
     });
   };
 
 } else {
-  request = function(type, url, data) {
+  request = function(type, url, data, callback) {
     return $.ajax({
       type: type,
       url: url,
-      data: data
+      data: data,
+      complete: callback
     });
   };
 }

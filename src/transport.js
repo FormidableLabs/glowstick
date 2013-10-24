@@ -49,7 +49,7 @@ function BoardTransport(fd, callback) {
   this.port.on('open', callback);
 
   this.dataCallbacks = {};
-  this.port.on( "data", function( chunk ) {
+  this.port.on( "data", _.bind(function( chunk ) {
     
 
     if(chunk.length >= 3 && chunk.length == chunk[2]+3){
@@ -72,7 +72,7 @@ function BoardTransport(fd, callback) {
       console.log("length=" + chunk.length + " len=" + chunk[2]);
       console.log(chunk);
     }
-  });
+  }, this));
 }
 
 BoardTransport.prototype.pushBuffer = function(data) {
@@ -173,12 +173,18 @@ BoardTransport.prototype.sendCommand = function(type, data) {
   this.port.write([parseInt('81', 16), type, data.length].concat(data));
 };
 
+var previousData;
 BoardTransport.prototype.drawScreen = function() {
   var pixelData = [];
 
   for(var i=0; i<this.pixels.length; i++){
     pixelData = pixelData.concat(this.pixels[i]);
   }
+  if (previousData === pixelData) {
+    return;
+  }
+
+  previousData = pixelData;
 
   this.sendCommand(packetTypes.PktSetScreenRequest, pixelData);
 }
